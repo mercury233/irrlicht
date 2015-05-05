@@ -1810,6 +1810,7 @@ bool CXMeshFileLoader::parseDataObjectAnimationKey(ISkinnedMesh::SJoint *joint)
 				ISkinnedMesh::SRotationKey *key=AnimatedMesh->addRotationKey(joint);
 				key->frame=time;
 				key->rotation.set(X,Y,Z,W);
+				key->rotation.normalize();
 			}
 			break;
 		case 1: //scale

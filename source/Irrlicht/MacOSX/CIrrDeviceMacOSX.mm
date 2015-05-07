@@ -496,7 +496,7 @@ CIrrDeviceMacOSX::CIrrDeviceMacOSX(const SIrrlichtCreationParameters& param)
 		{
 			[[NSAutoreleasePool alloc] init];
 			[NSApplication sharedApplication];
-			[NSApp setDelegate:[[[AppDelegate alloc] initWithDevice:this] autorelease]];
+			[NSApp setDelegate:(id<NSFileManagerDelegate>)[[[AppDelegate alloc] initWithDevice:this] autorelease]];
 			[NSBundle loadNibNamed:@"MainMenu" owner:[NSApp delegate]];
 			[NSApp finishLaunching];
 		}
@@ -718,7 +718,7 @@ bool CIrrDeviceMacOSX::createWindow()
 					if (!CreationParams.WindowId)
 					{
 						[Window center];
-						[Window setDelegate:[NSApp delegate]];
+						[Window setDelegate:(id<NSWindowDelegate>)[NSApp delegate]];
 
 						if(CreationParams.DriverType == video::EDT_OPENGL)
 							[OGLContext setView:[Window contentView]];

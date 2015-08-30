@@ -1,6 +1,7 @@
 --------------------------
 Changes in 1.8.2
 
+ - Add VS2013 project files
  - Fix compiling with IRR_LINUX_XCURSOR_
  - Fix compiling with NO_IRR_COMPILE_WITH_LIBJPEG_  (thx to anontypist for report and patch).
  - Fix compiling on GCC5 on MinGW (thanks to Slipxy for finding the bug and to osense for reporting it).

@@ -1,5 +1,9 @@
 --------------------------
-Changes in 1.8.2
+Changes in 1.8.3
+ - Fix the fix for compiling on GCC5 (thanks to est31 for report and patch)
+
+--------------------------
+Changes in 1.8.2 (30.8.2015)
 
  - Add VS2013 project files
  - Fix compiling with IRR_LINUX_XCURSOR_

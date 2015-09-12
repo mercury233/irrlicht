@@ -1,7 +1,7 @@
 VERSION_MAJOR = 1
 VERSION_MINOR = 8
-VERSION_RELEASE = 2
-# Irrlicht Engine 1.8.2
+VERSION_RELEASE = 3
+# Irrlicht Engine 1.8.3
 # Makefile for Linux
 #
 # To use, just run:

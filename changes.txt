@@ -1,5 +1,5 @@
 --------------------------
-Changes in 1.8.3
+Changes in 1.8.3 (13.9.2015)
  - Fix the fix for compiling on GCC5 (thanks to est31 for report and patch)
 
 --------------------------

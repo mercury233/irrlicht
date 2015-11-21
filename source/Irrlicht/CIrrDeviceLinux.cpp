@@ -1875,7 +1875,7 @@ const c8* CIrrDeviceLinux::getTextFromClipboard() const
 	Clipboard = "";
 	if (ownerWindow != None )
 	{
-		XConvertSelection (display, X_ATOM_CLIPBOARD, XA_STRING, None, ownerWindow, CurrentTime);
+		XConvertSelection (display, X_ATOM_CLIPBOARD, XA_STRING, XA_PRIMARY, ownerWindow, CurrentTime);
 		XFlush (display);
 
 		// check for data
@@ -1884,7 +1884,7 @@ const c8* CIrrDeviceLinux::getTextFromClipboard() const
 		unsigned long numItems, bytesLeft, dummy;
 		unsigned char *data;
 		XGetWindowProperty (display, ownerWindow,
-				XA_STRING, // property name
+				XA_PRIMARY, // property name
 				0, // offset
 				0, // length (we only check for data, so 0)
 				0, // Delete 0==false
@@ -1897,7 +1897,7 @@ const c8* CIrrDeviceLinux::getTextFromClipboard() const
 		if ( bytesLeft > 0 )
 		{
 			// there is some data to get
-			int result = XGetWindowProperty (display, ownerWindow, XA_STRING, 0,
+			int result = XGetWindowProperty (display, ownerWindow, XA_PRIMARY, 0,
 										bytesLeft, 0, AnyPropertyType, &type, &format,
 										&numItems, &dummy, &data);
 			if (result == Success)

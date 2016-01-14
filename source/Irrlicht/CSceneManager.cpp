@@ -1616,8 +1616,8 @@ void CSceneManager::drawAll()
 
 void CSceneManager::setLightManager(ILightManager* lightManager)
 {
-    if (lightManager)
-        lightManager->grab();
+	if (lightManager)
+		lightManager->grab();
 	if (LightManager)
 		LightManager->drop();
 

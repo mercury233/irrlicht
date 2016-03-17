@@ -814,6 +814,10 @@ precision will be lower but speed higher. currently X86 only
 
 #endif
 
+#if defined (__STRICT_ANSI__)
+    #error Compiling with __STRICT_ANSI__ not supported. MinGW/g++ does set this when compiling with -std=c++11 or -std=c++0x. Use instead -std=gnu++11 or -std=gnu++0x. Or use -U__STRICT_ANSI__ to disable strict ansi.
+#endif
+
 #ifdef _DEBUG
 	//! A few attributes are written in CSceneManager when _IRR_SCENEMANAGER_DEBUG is enabled
 	// NOTE: Those attributes were used always until 1.8.0 and became a global define for 1.8.1

@@ -8,11 +8,13 @@
 #define TestWithAllDrivers(X) \
 	logTestString("Running test " #X "\n"); \
 	for (u32 i=1; i<video::EDT_COUNT; ++i) \
-	result &= X(video::E_DRIVER_TYPE(i))
+		if (irr::IrrlichtDevice::isDriverSupported((irr::video::E_DRIVER_TYPE)i)) \
+			result &= X(video::E_DRIVER_TYPE(i))
 #define TestWithAllHWDrivers(X) \
 	logTestString("Running test " #X "\n"); \
 	for (u32 i=video::EDT_DIRECT3D8; i<video::EDT_COUNT; ++i) \
-	result &= X(video::E_DRIVER_TYPE(i))
+		if (irr::IrrlichtDevice::isDriverSupported((irr::video::E_DRIVER_TYPE)i)) \
+			result &= X(video::E_DRIVER_TYPE(i))
 
 // replacement for assert which does log the lines instead
 #define assert_log(X) \

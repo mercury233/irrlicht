@@ -1,5 +1,6 @@
 --------------------------
 Changes in 1.8.4
+ - Tests on Unix now have a short pause between switching drivers to avoid certain X11 errors.
  - Fix CEnumAttribute::getInt() which could crash  (thx @ luthyr for reporting)
  - No longer try to run tests for drivers not supported on a platform
  - Update lights and renderTargetTexture tests to work with Windows 10 (can't have so tiny Windows anymore).

@@ -1586,10 +1586,10 @@ public:
 
 	virtual s32 getInt()
 	{
-		for (s32 i=0; EnumLiterals.size(); ++i)
+		for (u32 i=0; i < EnumLiterals.size(); ++i)
 			if (Value.equals_ignore_case(EnumLiterals[i]))
 			{
-				return i;
+				return (s32)i;
 			}
 
 		return -1;

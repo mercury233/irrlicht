@@ -1,4 +1,6 @@
 The Win64-VisualStudio version is currently (Irrlicht 1.8) compiled with VS 2010 using the Windows 7.1 SDK as platform toolset.
+You might get the necessary Windows Platform SDK here: http://msdn.microsoft.com/en-us/windows/bb980924.aspx
+
 To link to that Irrlicht.dll you need to set platform toolset in your VS version to the same target or re-compile the Irrlicht.dll using another platform toolset.
 
 To re-compile Irrlicht for Win32-VisualStudio:

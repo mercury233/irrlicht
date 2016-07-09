@@ -1,5 +1,8 @@
 --------------------------
-Changes in 1.8.4
+Changes in 1.8.5
+
+--------------------------
+Changes in 1.8.4 (9th July 2016, svn r5321)
  - Tests on Unix now have a short pause between switching drivers to avoid certain X11 errors.
  - Fix CEnumAttribute::getInt() which could crash  (thx @ luthyr for reporting)
  - No longer try to run tests for drivers not supported on a platform

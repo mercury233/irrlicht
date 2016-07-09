@@ -1,5 +1,5 @@
 ==========================================================================
-The Irrlicht Engine SDK version 1.8.3
+The Irrlicht Engine SDK version 1.8.4
 ==========================================================================
 
   Welcome the Irrlicht Engine SDK.
@@ -75,7 +75,7 @@ The Irrlicht Engine SDK version 1.8.3
   work as well, we simply didn't test them.
 
   * gcc 4.x
-  * Visual Studio 2008(9.0)-2012(11.0)
+  * Visual Studio 2010(10.0)-2013(12.0)
   * Code::Blocks (& gcc or visual studio toolkit)
   
   If you ever want to (re)compile the engine yourself (which means you don't
@@ -170,7 +170,7 @@ The Irrlicht Engine SDK version 1.8.3
   See http://irrlicht.sourceforge.net/author.html for more informations)
 
   Christian Stehno (hybrid)   Contribution Coordinator/Developer
-  Michael Zeilfelder (cutealien) GUI Developer
+  Michael Zeilfelder (cutealien) Developer
   Patryk Nadrowski (Nadro)    Developer  
   Yoran Bosman (Yoran)        Webserver administrator
   Gareth Davidson (bitplane)  Developer/ Forum admin

@@ -1,6 +1,6 @@
 --------------------------
 Changes in 1.8.5
- - CImageLoaderJPG::isALoadableFileFormat uses a test which allows to load more jpg formats (for example uncompressed jpg's). Thx @Yraon Cohen-Tal for report, test-image and his help with the patch.
+ - CImageLoaderJPG::isALoadableFileFormat uses a test which allows to load more jpg formats (for example uncompressed jpg's). Thx @Yaron Cohen-Tal for report, test-image and his help with the patch.
 
 --------------------------
 Changes in 1.8.4 (9th July 2016, svn r5321)

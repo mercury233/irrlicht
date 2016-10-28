@@ -1,5 +1,6 @@
 --------------------------
 Changes in 1.8.5
+ - Fix crash in eventhandling when calling remove() on a contextmenu while it has focus.
  - CImageLoaderJPG::isALoadableFileFormat uses a test which allows to load more jpg formats (for example uncompressed jpg's). Thx @Yaron Cohen-Tal for report, test-image and his help with the patch.
 
 --------------------------

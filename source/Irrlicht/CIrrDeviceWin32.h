@@ -277,8 +277,8 @@ namespace irr
 			/** Used to notify the cursor that the window resizable settings changed. */
 			void updateBorderSize(bool fullscreen, bool resizable)
 			{
-			   if (!fullscreen)
-			   {
+				if (!fullscreen)
+				{
 					s32 paddingBorder = 0;
 					#if defined (SM_CXPADDEDBORDER)
 						if (CIrrDeviceWin32::isWindowsVistaOrGreater())
@@ -295,11 +295,11 @@ namespace irr
 						BorderX = GetSystemMetrics(SM_CXDLGFRAME) + paddingBorder;
 						BorderY = GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CYDLGFRAME) + paddingBorder;
 					}
-			   }
-			   else
-			   {
-				  BorderX = BorderY = 0;
-			   }
+				}
+				else
+				{
+					BorderX = BorderY = 0;
+				}
 			}
 
 

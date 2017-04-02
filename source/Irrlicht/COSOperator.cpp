@@ -166,9 +166,12 @@ bool COSOperator::getProcessorSpeedMHz(u32* MHz) const
 #endif
 }
 
+#include <winnt.h>
 bool COSOperator::getSystemMemory(u32* Total, u32* Avail) const
 {
 #if defined(_IRR_WINDOWS_API_) && !defined (_IRR_XBOX_PLATFORM_)
+
+    #if (_WIN32_WINNT >= 0x0500)
 	MEMORYSTATUSEX MemoryStatusEx;
  	MemoryStatusEx.dwLength = sizeof(MEMORYSTATUSEX);
 
@@ -179,9 +182,20 @@ bool COSOperator::getSystemMemory(u32* Total, u32* Avail) const
 		*Total = (u32)(MemoryStatusEx.ullTotalPhys>>10);
 	if (Avail)
 		*Avail = (u32)(MemoryStatusEx.ullAvailPhys>>10);
-
-	_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX;
 	return true;
+	#else
+	MEMORYSTATUS MemoryStatus;
+	MemoryStatus.dwLength = sizeof(MEMORYSTATUS);
+
+ 	// cannot fail
+	GlobalMemoryStatus(&MemoryStatus);
+
+ 	if (Total)
+		*Total = (u32)(MemoryStatus.dwTotalPhys>>10);
+ 	if (Avail)
+		*Avail = (u32)(MemoryStatus.dwAvailPhys>>10);
+    return true;
+	#endif
 
 #elif defined(_IRR_POSIX_API_) && !defined(__FreeBSD__)
 #if defined(_SC_PHYS_PAGES) && defined(_SC_AVPHYS_PAGES)

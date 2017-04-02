@@ -166,7 +166,6 @@ bool COSOperator::getProcessorSpeedMHz(u32* MHz) const
 #endif
 }
 
-#include <winnt.h>
 bool COSOperator::getSystemMemory(u32* Total, u32* Avail) const
 {
 #if defined(_IRR_WINDOWS_API_) && !defined (_IRR_XBOX_PLATFORM_)

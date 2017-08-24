@@ -109,6 +109,9 @@ CFileSystem::~CFileSystem()
 //! opens a file for read access
 IReadFile* CFileSystem::createAndOpenFile(const io::path& filename)
 {
+	if ( filename.empty() )
+		return 0;
+
 	IReadFile* file = 0;
 	u32 i;
 
@@ -611,6 +614,8 @@ bool CFileSystem::changeWorkingDirectoryTo(const io::path& newDirectory)
 
 io::path CFileSystem::getAbsolutePath(const io::path& filename) const
 {
+	if ( filename.empty() )
+		return filename;
 #if defined(_IRR_WINDOWS_CE_PLATFORM_)
 	return filename;
 #elif defined(_IRR_WINDOWS_API_)

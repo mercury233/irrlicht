@@ -220,12 +220,7 @@ void CIrrDeviceSDL::createDriver()
 	{
 	case video::EDT_DIRECT3D8:
 		#ifdef _IRR_COMPILE_WITH_DIRECT3D_8_
-
-		VideoDriver = video::createDirectX8Driver(CreationParams, FileSystem, HWnd);
-		if (!VideoDriver)
-		{
-			os::Printer::log("Could not create DIRECT3D8 Driver.", ELL_ERROR);
-		}
+		os::Printer::log("SDL device does not support DIRECT38 driver. Try another one.", ELL_ERROR);
 		#else
 		os::Printer::log("DIRECT3D8 Driver was not compiled into this dll. Try another one.", ELL_ERROR);
 		#endif // _IRR_COMPILE_WITH_DIRECT3D_8_
@@ -234,12 +229,7 @@ void CIrrDeviceSDL::createDriver()
 
 	case video::EDT_DIRECT3D9:
 		#ifdef _IRR_COMPILE_WITH_DIRECT3D_9_
-
-		VideoDriver = video::createDirectX9Driver(CreationParams, FileSystem, HWnd);
-		if (!VideoDriver)
-		{
-			os::Printer::log("Could not create DIRECT3D9 Driver.", ELL_ERROR);
-		}
+		os::Printer::log("SDL device does not support DIRECT3D9 driver. Try another one.", ELL_ERROR);
 		#else
 		os::Printer::log("DIRECT3D9 Driver was not compiled into this dll. Try another one.", ELL_ERROR);
 		#endif // _IRR_COMPILE_WITH_DIRECT3D_9_
@@ -764,7 +754,7 @@ void CIrrDeviceSDL::restoreWindow()
 //! returns if window is active. if not, nothing need to be drawn
 bool CIrrDeviceSDL::isWindowActive() const
 {
-	return SDL_GetAppState()&SDL_APPACTIVE;
+	return (SDL_GetAppState()&SDL_APPACTIVE) ? true : false;
 }
 
 

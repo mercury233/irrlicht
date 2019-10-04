@@ -57,7 +57,7 @@ CIrrDeviceSDL::CIrrDeviceSDL(const SIrrlichtCreationParameters& param)
 	Screen((SDL_Surface*)param.WindowId), SDL_Flags(SDL_ANYFORMAT),
 	MouseX(0), MouseY(0), MouseButtonStates(0),
 	Width(param.WindowSize.Width), Height(param.WindowSize.Height),
-	Resizable(false), WindowHasFocus(false), WindowMinimized(false)
+	Resizable(false), WindowMinimized(false)
 {
 	#ifdef _DEBUG
 	setDebugName("CIrrDeviceSDL");
@@ -413,10 +413,6 @@ bool CIrrDeviceSDL::run()
 			break;
 
 		case SDL_ACTIVEEVENT:
-			if ((SDL_event.active.state == SDL_APPMOUSEFOCUS) ||
-					(SDL_event.active.state == SDL_APPINPUTFOCUS))
-				WindowHasFocus = (SDL_event.active.gain==1);
-			else
 			if (SDL_event.active.state == SDL_APPACTIVE)
 				WindowMinimized = (SDL_event.active.gain!=1);
 			break;
@@ -849,7 +845,7 @@ bool CIrrDeviceSDL::isWindowActive() const
 //! returns if window has focus.
 bool CIrrDeviceSDL::isWindowFocused() const
 {
-	return WindowHasFocus;
+	return (SDL_GetAppState()&SDL_APPINPUTFOCUS) ? true : false;
 }
 
 

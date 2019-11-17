@@ -437,7 +437,9 @@ namespace video
 		\param format The color format of the render target. Floating point formats are supported.
 		\return Pointer to the created texture or 0 if the texture
 		could not be created. This pointer should not be dropped. See
-		IReferenceCounted::drop() for more information. */
+		IReferenceCounted::drop() for more information.
+		You may want to remove it from driver texture cache with removeTexture if you no longer need it.
+		*/
 		virtual ITexture* addRenderTargetTexture(const core::dimension2d<u32>& size,
 				const io::path& name = "rt", const ECOLOR_FORMAT format = ECF_UNKNOWN) =0;
 

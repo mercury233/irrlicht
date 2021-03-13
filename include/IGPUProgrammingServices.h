@@ -78,7 +78,7 @@ public:
 	OnSetConstants(). In this way it is easily possible to use the same
 	callback method for multiple materials and distinguish between them
 	during the call.
-	\param shaderLang a type of shading language used in current shader.
+	\param shadingLang a type of shading language used in current shader.
 	\return Number of the material type which can be set in
 	SMaterial::MaterialType to use the renderer. -1 is returned if an error
 	occured, e.g. if a shader program could not be compiled or a compile
@@ -205,7 +205,7 @@ public:
 	OnSetConstants(). In this way it is easily possible to use the same
 	callback method for multiple materials and distinguish between them
 	during the call.
-	\param shaderLang a type of shading language used in current shader.
+	\param shadingLang a type of shading language used in current shader.
 	\return Number of the material type which can be set in
 	SMaterial::MaterialType to use the renderer. -1 is returned if an error
 	occured, e.g. if a shader program could not be compiled or a compile
@@ -330,7 +330,7 @@ public:
 	OnSetConstants(). In this way it is easily possible to use the same
 	callback method for multiple materials and distinguish between them
 	during the call.
-	\param shaderLang a type of shading language used in current shader.
+	\param shadingLang a type of shading language used in current shader.
 	\return Number of the material type which can be set in
 	SMaterial::MaterialType to use the renderer. -1 is returned if an
 	error occured, e.g. if a shader program could not be compiled or a

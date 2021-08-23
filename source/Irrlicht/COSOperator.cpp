@@ -13,7 +13,9 @@
 #include <unistd.h>
 #ifndef _IRR_SOLARIS_PLATFORM_
 #include <sys/types.h>
+#ifdef _IRR_OSX_PLATFORM_
 #include <sys/sysctl.h>
+#endif
 #endif
 #endif
 

@@ -1,5 +1,8 @@
 --------------------------
-Changes in 1.8.5
+Changes in 1.8.6 
+
+--------------------------
+Changes in 1.8.5 (1st November 2021, svn [r6263])
  - Fix some aes compile warnings on gcc about fall-throughs.
  - No longer include sys/sysctl.h on other platforms than OSX. Fixes compile errors in COSOperator on newer Linux systems.
  - Update script to generate tutorial.html's in example folders. Add missing ones. Update existing ones. Thanks @Guillian J for noticing those were outdated.

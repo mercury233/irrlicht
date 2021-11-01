@@ -1,5 +1,6 @@
 --------------------------
 Changes in 1.8.5
+ - No longer include sys/sysctl.h on other platforms than OSX. Fixes compile errors in COSOperator on newer Linux systems.
  - Update script to generate tutorial.html's in example folders. Add missing ones. Update existing ones. Thanks @Guillian J for noticing those were outdated.
  - Update libpng to 1.6.37 (from 1.6.23)
  - Fix CIrrDeviceSDL::getVideoModeList which didn't return video modes before. Thx @kas1e for report and patch.

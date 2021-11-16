@@ -1,5 +1,6 @@
 --------------------------
 Changes in 1.8.6 
+- Several spelling fixes (Patch #455). Thanks @J. Puydt
 
 --------------------------
 Changes in 1.8.5 (1st November 2021, svn [r6263])

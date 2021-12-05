@@ -1,5 +1,6 @@
 --------------------------
 Changes in 1.8.6 
+- Makefile now only adds CFLAGS instead of overwriting them.
 - Several spelling fixes (Patch #455). Thanks @J. Puydt
 
 --------------------------

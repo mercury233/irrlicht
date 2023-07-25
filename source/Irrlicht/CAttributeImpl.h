@@ -1918,7 +1918,7 @@ public:
 
 		if ( Value )
 			return core::stringc(Value->getName().getPath().c_str());
-		
+
 		return core::stringc(0);
 	}
 
@@ -2034,9 +2034,28 @@ public:
 
 	virtual void setString(const char* text)
 	{
-		u32 tmp;
-		sscanf(text, "0x%x", &tmp);
-		Value = (void *) tmp;
+		size_t val = 0;
+		switch ( sizeof(void*) )
+		{
+			case 4:
+			{
+				unsigned int tmp; // not using an irrlicht type - sscanf with %x needs always unsigned int
+				sscanf(text, "%x", &tmp);
+				val = (size_t)tmp;
+			}
+			break;
+			case 8:
+			{
+#ifdef _MSC_VER
+				const unsigned __int64 tmp = _strtoui64(text, NULL, 16);
+#else
+				const unsigned long long tmp = strtoull(text, NULL, 16);
+#endif
+				val = (size_t)tmp;
+			}
+			break;
+		}
+		Value = (void *)val;
 	}
 
 	virtual E_ATTRIBUTE_TYPE getType() const

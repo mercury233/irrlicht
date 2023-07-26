@@ -328,15 +328,13 @@ void process_uncomp(
 //-----------------------------------------------------------
 void flush_outbuf(unsigned char *out_buf, int out_buf_size)
 {
-    register int pos=0;
-
-    if(!outbuf_cnt)
+    if (!outbuf_cnt)
        return;        // nothing to do */
 
     // send no. of unencoded bytes to be sent
     put_byte((unsigned char)(outbuf_cnt - 1), out_buf, out_buf_size);
 
-    for ( ; outbuf_cnt; outbuf_cnt--)
+    for (int pos=0; outbuf_cnt; outbuf_cnt--)
        put_byte((unsigned char)outbuf[pos++], out_buf, out_buf_size);
 }
 //---------------------------------------------------

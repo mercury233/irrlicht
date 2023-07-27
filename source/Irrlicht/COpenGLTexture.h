@@ -11,33 +11,7 @@
 #include "IrrCompileConfig.h"
 #ifdef _IRR_COMPILE_WITH_OPENGL_
 
-#if defined(_IRR_OPENGL_USE_EXTPOINTER_)
-	#define GL_GLEXT_LEGACY 1
-#else
-	#define GL_GLEXT_PROTOTYPES 1
-#endif
-#ifdef _IRR_WINDOWS_API_
-	// include windows headers for HWND
-	#define WIN32_LEAN_AND_MEAN
-	#include <windows.h>
-	#include <GL/gl.h>
-#ifdef _MSC_VER
-	#pragma comment(lib, "OpenGL32.lib")
-#endif
-#elif defined(_IRR_OSX_PLATFORM_)
-	#include <OpenGL/gl.h>
-#elif defined(_IRR_COMPILE_WITH_SDL_DEVICE_)
-	#define NO_SDL_GLEXT
-	#include <SDL/SDL_video.h>
-	#include <SDL/SDL_opengl.h>
-#else
-	#if defined(_IRR_OSX_PLATFORM_)
-		#include <OpenGL/gl.h>
-	#else
-		#include <GL/gl.h>
-	#endif
-#endif
-
+#include "COpenGLCommon.h"
 
 namespace irr
 {
@@ -202,4 +176,3 @@ protected:
 
 #endif
 #endif // _IRR_COMPILE_WITH_OPENGL_
-

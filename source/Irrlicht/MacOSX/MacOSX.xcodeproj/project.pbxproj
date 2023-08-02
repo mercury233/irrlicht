@@ -2078,7 +2078,7 @@
 		5DD480C50C7DA66800728AA9 /* COpenGLExtensionHandler.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = COpenGLExtensionHandler.cpp; sourceTree = "<group>"; };
 		5DD480C60C7DA66800728AA9 /* CMD3MeshFileLoader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CMD3MeshFileLoader.cpp; sourceTree = "<group>"; };
 		959726FD12C18FFC00BF73D3 /* IrrFramework.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = IrrFramework.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		959726FE12C18FFC00BF73D3 /* irrFramework-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "irrFramework-Info.plist"; sourceTree = "<group>"; };
+		959726FE12C18FFC00BF73D3 /* IrrFramework-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "IrrFramework-Info.plist"; sourceTree = "<group>"; };
 		95972B8312C19A5C00BF73D3 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		95972B8912C19A7600BF73D3 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
 		95972B8D12C19A7F00BF73D3 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
@@ -2366,7 +2366,7 @@
 				4C53E2540A48505D0014E966 /* Libraries */,
 				4C53E24C0A484FED0014E966 /* Products */,
 				959726FD12C18FFC00BF73D3 /* IrrFramework.framework */,
-				959726FE12C18FFC00BF73D3 /* irrFramework-Info.plist */,
+				959726FE12C18FFC00BF73D3 /* IrrFramework-Info.plist */,
 				95972B8312C19A5C00BF73D3 /* OpenGL.framework */,
 				95972B8912C19A7600BF73D3 /* IOKit.framework */,
 				95972B8D12C19A7F00BF73D3 /* Carbon.framework */,

@@ -1,5 +1,6 @@
 --------------------------
 Changes in 1.8.6
+- Backport: Fix compiling for Apple silicon (Bugs #452 and #461). Thanks @Ryan Schmidt for bug report and updated patch.
 - Fix compiling on OSX with case-sensitive filesystems: IrrFramework-Info.plist now always starting with upper-case. 
   Thanks @Ryan Schmidt for bug report and patch.
 - Fix: The build-in libpng now uses same zlib headers as rest of Irrlicht. 

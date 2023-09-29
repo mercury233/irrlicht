@@ -282,14 +282,9 @@ IImage* CImageLoaderBMP::loadImage(io::IReadFile* file) const
 
 	file->seek(header.BitmapDataOffset);
 
-	f32 t = (header.Width) * (header.BPP / 8.0f);
-	s32 widthInBytes = (s32)t;
-	t -= widthInBytes;
-	if (t!=0.0f)
-		++widthInBytes;
-
-	s32 lineData = widthInBytes + ((4-(widthInBytes%4)))%4;
-	pitch = lineData - widthInBytes;
+	const s32 widthInBytes = core::ceil32(header.Width * (header.BPP / 8.0f));
+	const s32 lineSize = widthInBytes + ((4-(widthInBytes%4)))%4;
+	pitch = lineSize - widthInBytes;
 
 	u8* bmpData = new u8[header.BitmapDataSize];
 	file->read(bmpData, header.BitmapDataSize);

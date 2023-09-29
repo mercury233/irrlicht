@@ -294,10 +294,21 @@ IImage* CImageLoaderBMP::loadImage(io::IReadFile* file) const
 	{
 	case 1: // 8 bit rle
 		decompress8BitRLE(bmpData, header.BitmapDataSize, header.Width, header.Height, pitch);
+		header.BitmapDataSize = (header.Width + pitch) * header.Height;
 		break;
 	case 2: // 4 bit rle
 		decompress4BitRLE(bmpData, header.BitmapDataSize, header.Width, header.Height, pitch);
+		header.BitmapDataSize = ((header.Width+1)/2 + pitch) * header.Height;
 		break;
+	}
+
+	if (header.BitmapDataSize < lineSize * header.Height)
+	{
+		os::Printer::log("Bitmap data is cut off.", ELL_ERROR);
+
+		delete [] paletteData;
+		delete [] bmpData;
+		return 0;
 	}
 
 	// create surface

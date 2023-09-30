@@ -284,7 +284,7 @@ exit:
 
 #undef EXIT_P_OVERFLOW
 #undef EXIT_D_OVERFLOW
-
+#undef KEEP_ROW_LINE_INSIDE
 
 //! creates a surface from the file
 IImage* CImageLoaderBMP::loadImage(io::IReadFile* file) const

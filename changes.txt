@@ -1,6 +1,9 @@
 --------------------------
 Changes in 1.8.6
-- CImageLoaderBMP: check bitmap data against required size. Thanks @sfan5 for bug report and patch 
+- CImageLoaderBMP: Fix handling 4 bit RLE encoding. Thanks @sfan5 finding first bug and reporting (turned out there were quite a few more, this never worked much)
+- CImageLoaderBMP: add bound checks to RLE decompression. Thanks @sfan5 for report and patch
+  Patch (commit 4506d23 to Minetest): https://github.com/minetest/irrlicht/commit/4506d23dc3fa48332b5ca6c05633aebdbac673be
+- CImageLoaderBMP: check bitmap data against required size. Thanks @sfan5 for report and patch 
   Report: https://irrlicht.sourceforge.io/forum/viewtopic.php?p=307195
   Patch (commit 028cb8d to Minetest): https://github.com/minetest/irrlicht/commit/028cb8dbed8266264a5804108191f56e238db1bc
 - Fix OSX 10.9X build problem related to NSApplication setDelegate calls getting casted to wrong class (Bug #462 and also fixing older Bug #297)

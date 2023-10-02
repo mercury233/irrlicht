@@ -63,6 +63,9 @@ bool COBJMeshFileLoader::isALoadableFileExtension(const io::path& filename) cons
 //! See IReferenceCounted::drop() for more information.
 IAnimatedMesh* COBJMeshFileLoader::createMesh(io::IReadFile* file)
 {
+	if (!file)
+		return 0;
+
 	const long filesize = file->getSize();
 	if (!filesize)
 		return 0;
@@ -91,6 +94,10 @@ IAnimatedMesh* COBJMeshFileLoader::createMesh(io::IReadFile* file)
 	bool mtlChanged=false;
 	bool useGroups = !SceneManager->getParameters()->getAttributeAsBool(OBJ_LOADER_IGNORE_GROUPS);
 	bool useMaterials = !SceneManager->getParameters()->getAttributeAsBool(OBJ_LOADER_IGNORE_MATERIAL_FILES);
+	core::array<int> faceCorners;
+	faceCorners.reallocate(32); // should be large enough
+	const core::stringc TAG_OFF = "off";
+
 	while(bufPtr != bufEnd)
 	{
 		switch(bufPtr[0])
@@ -163,7 +170,7 @@ IAnimatedMesh* COBJMeshFileLoader::createMesh(io::IReadFile* file)
 #ifdef _IRR_DEBUG_OBJ_LOADER_
 	os::Printer::log("Loaded smoothing group start",smooth, ELL_DEBUG);
 #endif
-				if (core::stringc("off")==smooth)
+				if (TAG_OFF==smooth)
 					smoothingGroup=0;
 				else
 					smoothingGroup=core::strtoul10(smooth);
@@ -205,8 +212,7 @@ IAnimatedMesh* COBJMeshFileLoader::createMesh(io::IReadFile* file)
 			const c8* linePtr = wordBuffer.c_str();
 			const c8* const endPtr = linePtr+wordBuffer.size();
 
-			core::array<int> faceCorners;
-			faceCorners.reallocate(32); // should be large enough
+			faceCorners.set_used(0); // fast clear
 
 			// read in all vertices
 			linePtr = goNextWord(linePtr, endPtr);
@@ -216,18 +222,19 @@ IAnimatedMesh* COBJMeshFileLoader::createMesh(io::IReadFile* file)
 				// sends the buffer sizes and gets the actual indices
 				// if index not set returns -1
 				s32 Idx[3];
-				Idx[1] = Idx[2] = -1;
+				Idx[0] = Idx[1] = Idx[2] = -1;
 
 				// read in next vertex's data
 				u32 wlength = copyWord(vertexWord, linePtr, WORD_BUFFER_LENGTH, endPtr);
 				// this function will also convert obj's 1-based index to c++'s 0-based index
 				retrieveVertexIndices(vertexWord, Idx, vertexWord+wlength+1, vertexBuffer.size(), textureCoordBuffer.size(), normalsBuffer.size());
-				v.Pos = vertexBuffer[Idx[0]];
-				if ( -1 != Idx[1] )
+				if ( -1 != Idx[0] && Idx[0] < (irr::s32)vertexBuffer.size() )
+					v.Pos = vertexBuffer[Idx[0]];
+				if ( -1 != Idx[1] && Idx[1] < (irr::s32)textureCoordBuffer.size() )
 					v.TCoords = textureCoordBuffer[Idx[1]];
 				else
 					v.TCoords.set(0.0f,0.0f);
-				if ( -1 != Idx[2] )
+				if ( -1 != Idx[2] && Idx[2] < (irr::s32)normalsBuffer.size() )
 					v.Normal = normalsBuffer[Idx[2]];
 				else
 				{
@@ -262,8 +269,6 @@ IAnimatedMesh* COBJMeshFileLoader::createMesh(io::IReadFile* file)
 				currMtl->Meshbuffer->Indices.push_back( faceCorners[i] );
 				currMtl->Meshbuffer->Indices.push_back( faceCorners[0] );
 			}
-			faceCorners.set_used(0); // fast clear
-			faceCorners.reallocate(32);
 		}
 		break;
 
@@ -826,12 +831,11 @@ core::stringc COBJMeshFileLoader::copyLine(const c8* inBuf, const c8* bufEnd)
 	const c8* ptr = inBuf;
 	while (ptr<bufEnd)
 	{
-		if (*ptr=='\n' || *ptr=='\r')
+		if (*ptr=='\n' || *ptr=='\r')	// not copying the line end character
 			break;
 		++ptr;
 	}
-	// we must avoid the +1 in case the array is used up
-	return core::stringc(inBuf, (u32)(ptr-inBuf+((ptr < bufEnd) ? 1 : 0)));
+	return core::stringc(inBuf, (u32)(ptr-inBuf));
 }
 
 

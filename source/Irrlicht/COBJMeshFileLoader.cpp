@@ -66,9 +66,21 @@ IAnimatedMesh* COBJMeshFileLoader::createMesh(io::IReadFile* file)
 	if (!file)
 		return 0;
 
-	const long filesize = file->getSize();
+	long filesize = file->getSize();
 	if (!filesize)
 		return 0;
+
+	const io::path fullName = file->getFileName();
+	const io::path relPath = FileSystem->getFileDir(fullName)+"/";
+
+	c8* buf = new c8[filesize];
+	filesize = file->read((void*)buf, filesize);
+	if ( filesize <= 0 )
+	{
+		delete[] buf;
+		return 0;
+	}
+	const c8* const bufEnd = buf+filesize;
 
 	const u32 WORD_BUFFER_LENGTH = 512;
 
@@ -79,14 +91,6 @@ IAnimatedMesh* COBJMeshFileLoader::createMesh(io::IReadFile* file)
 	SObjMtl * currMtl = new SObjMtl();
 	Materials.push_back(currMtl);
 	u32 smoothingGroup=0;
-
-	const io::path fullName = file->getFileName();
-	const io::path relPath = FileSystem->getFileDir(fullName)+"/";
-
-	c8* buf = new c8[filesize];
-	memset(buf, 0, filesize);
-	file->read((void*)buf, filesize);
-	const c8* const bufEnd = buf+filesize;
 
 	// Process obj information
 	const c8* bufPtr = buf;

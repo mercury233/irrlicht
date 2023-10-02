@@ -266,12 +266,19 @@ IAnimatedMesh* COBJMeshFileLoader::createMesh(io::IReadFile* file)
 			}
 
 			// triangulate the face
-			for ( u32 i = 1; i < faceCorners.size() - 1; ++i )
+			if ( faceCorners.size() >= 3)
 			{
-				// Add a triangle
-				currMtl->Meshbuffer->Indices.push_back( faceCorners[i+1] );
-				currMtl->Meshbuffer->Indices.push_back( faceCorners[i] );
-				currMtl->Meshbuffer->Indices.push_back( faceCorners[0] );
+				for ( u32 i = 1; i < faceCorners.size() - 1; ++i )
+				{
+					// Add a triangle
+					currMtl->Meshbuffer->Indices.push_back( faceCorners[i+1] );
+					currMtl->Meshbuffer->Indices.push_back( faceCorners[i] );
+					currMtl->Meshbuffer->Indices.push_back( faceCorners[0] );
+				}
+			}
+			else
+			{
+				os::Printer::log("Too few vertices in this line", wordBuffer.c_str());
 			}
 		}
 		break;

@@ -1,5 +1,7 @@
 --------------------------
 Changes in 1.8.6
+- COBJMeshFilerLoder: prevent buffer overruns from loading files passing negative indices. Thanks @sfan5 fore report and patch.
+  Patch (commit 827710f to Minetest): https://github.com/minetest/irrlicht/commit/827710f74a615f53b2a1b0c539c58c2b6124f883
 - COBJMeshFilerLoder: fix buffer overruns when loading empty face lines. Thanks @sfan5 fore report and patch.
   Patch (commit 80e1609 to Minetest): https://github.com/minetest/irrlicht/commit/80e160935d3c2677344b0968c2690f63083a98dd (partially applied)
 - CObjMeshFileLoader: Backport fixes from trunk to avoid unnecessary memory allocations (speedup)

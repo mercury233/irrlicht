@@ -1095,10 +1095,9 @@ void CB3DMeshFileLoader::loadTextures(SB3dMaterial& material) const
 void CB3DMeshFileLoader::readString(core::stringc& newstring)
 {
 	newstring="";
-	while (B3DFile->getPos() <= B3DFile->getSize())
+	c8 character=0;
+	while (B3DFile->read(&character, sizeof(character)) > 0) // until eof
 	{
-		c8 character;
-		B3DFile->read(&character, sizeof(character));
 		if (character==0)
 			return;
 		newstring.append(character);

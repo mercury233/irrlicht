@@ -73,13 +73,14 @@ IAnimatedMesh* COBJMeshFileLoader::createMesh(io::IReadFile* file)
 	const io::path fullName = file->getFileName();
 	const io::path relPath = FileSystem->getFileDir(fullName)+"/";
 
-	c8* buf = new c8[filesize];
+	c8* buf = new c8[filesize+1]; // plus null-terminator (some string functions used in parsing)
 	filesize = file->read((void*)buf, filesize);
 	if ( filesize <= 0 )
 	{
 		delete[] buf;
 		return 0;
 	}
+	buf[filesize] = 0;
 	const c8* const bufEnd = buf+filesize;
 
 	const u32 WORD_BUFFER_LENGTH = 512;

@@ -1,5 +1,7 @@
 --------------------------
 Changes in 1.8.6
+- TGA loader: Fix number overflow causing crashes. Thanks @sfan5 for fuzzing test.
+- TGA loader: Fix several buffer overflows. Thanks @erlehmann for report and @sfan5 for fuzzing test: https://github.com/minetest/irrlicht/issues/236
 - COBJMeshFilerLoder: prevent buffer overruns from loading files passing negative indices. Thanks @sfan5 fore report and patch.
   Patch (commit 827710f to Minetest): https://github.com/minetest/irrlicht/commit/827710f74a615f53b2a1b0c539c58c2b6124f883
 - COBJMeshFilerLoder: fix buffer overruns when loading empty face lines. Thanks @sfan5 fore report and patch.

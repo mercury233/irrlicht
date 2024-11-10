@@ -338,7 +338,7 @@ namespace video
 		//! inits the opengl-es driver
 		virtual bool genericDriverInit(const core::dimension2d<u32>& screenSize, bool stencilBuffer);
 
-		void chooseMaterial2D();
+		void chooseMaterial2D(bool textureClampToEdge=false);
 
 		virtual ITexture* createDeviceDependentTexture(const io::path& name, IImage* image) IRR_OVERRIDE;
 

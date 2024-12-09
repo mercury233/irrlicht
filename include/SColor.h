@@ -444,7 +444,7 @@ namespace video
 		}
 
 		//! color in A8R8G8B8 Format
-		u32 color;
+		u32 color{};
 	};
 
 

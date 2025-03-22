@@ -5,3 +5,4 @@
 /bin/MacOSX
 /irrlicht.patch
 /premake*.lua
+/defines.lua

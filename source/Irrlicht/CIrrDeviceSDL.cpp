@@ -731,7 +731,7 @@ video::IVideoModeList* CIrrDeviceSDL::getVideoModeList()
 
 
 #if defined(_IRR_COMPILE_WITH_OPENGL_) && defined(_IRR_WINDOWS_)
-#define IRR_SHARE_GL_RESOURCE_ON_RESIZE 
+#define IRR_SHARE_GL_RESOURCE_ON_RESIZE
 
 // Code from http://www.bytehazard.com/articles/sdlres.html (with some changes) to share GL resources used in SDL on Win32 while switching GL context
 static HGLRC startShareGLResources()
@@ -739,7 +739,7 @@ static HGLRC startShareGLResources()
 	// get window handle from SDL
 	SDL_SysWMinfo info;
 	SDL_VERSION(&info.version);
-	if (SDL_GetWMInfo(&info) == -1) 
+	if (SDL_GetWMInfo(&info) == -1)
 	{
 		return 0;
 	}
@@ -749,15 +749,15 @@ static HGLRC startShareGLResources()
 
 	// create temporary context
 	HGLRC tempRC = wglCreateContext( tempDC );
-	if (tempRC == NULL) 
+	if (tempRC == NULL)
 	{
 		ReleaseDC(info.window, tempDC);
 		return 0;
 	}
- 
+
 	// share resources to temporary context
 	SetLastError(0);
-	if (!wglShareLists(info.hglrc, tempRC)) 
+	if (!wglShareLists(info.hglrc, tempRC))
 	{
 		ReleaseDC(info.window, tempDC);
 		return 0;
@@ -770,23 +770,23 @@ static bool endShareGLResources(HGLRC tempRC)
 {
 	SDL_SysWMinfo info;
 	SDL_VERSION(&info.version);
-	if (SDL_GetWMInfo(&info) == -1) 
+	if (SDL_GetWMInfo(&info) == -1)
 	{
 		return false;
 	}
- 
+
 	// share resources to new SDL-created context
-	if (!wglShareLists(tempRC, info.hglrc)) 
+	if (!wglShareLists(tempRC, info.hglrc))
 	{
 		return false;
 	}
- 
+
 	// we no longer need our temporary context
-	if (!wglDeleteContext(tempRC)) 
+	if (!wglDeleteContext(tempRC))
 	{
 		return false;
 	}
- 
+
 	return true;
 }
 #endif

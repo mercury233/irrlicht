@@ -10,7 +10,7 @@
 #import <Cocoa/Cocoa.h>
 #import "CIrrDeviceMacOSX.h"
 
-@interface AppDelegate : NSTextView <NSApplicationDelegate>
+@interface AppDelegate : NSTextView <NSApplicationDelegate, NSWindowDelegate>
 {
 	BOOL			_quit;
 	irr::CIrrDeviceMacOSX	*_device;

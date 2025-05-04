@@ -402,7 +402,8 @@ bool CXMeshFileLoader::readFileIntoMemory(io::IReadFile* file)
 		return false;
 	}
 
-	Buffer = new c8[size];
+	Buffer = new c8[size+1];
+	Buffer[size] = 0x0; // null-terminate (thx @ sfan5)
 
 	//! read all into memory
 	if (file->read(Buffer, size) != size)
@@ -1094,7 +1095,7 @@ bool CXMeshFileLoader::parseDataObjectSkinWeights(SXMesh &mesh)
 
 	if (!getNextTokenAsString(TransformNodeName))
 	{
-		os::Printer::log("Unknown syntax while reading transfrom node name string in .x file", ELL_WARNING);
+		os::Printer::log("Unknown syntax while reading transform node name string in .x file", ELL_WARNING);
 		os::Printer::log("Line", core::stringc(Line).c_str(), ELL_WARNING);
 		return false;
 	}
@@ -1879,7 +1880,7 @@ bool CXMeshFileLoader::parseDataObjectAnimationKey(ISkinnedMesh::SJoint *joint)
 				ISkinnedMesh::SRotationKey *keyR=AnimatedMesh->addRotationKey(joint);
 				keyR->frame=time;
 
-				// IRR_TEST_BROKEN_QUATERNION_USE: TODO - switched from mat to mat.getTransposed() for downward compatibility. 
+				// IRR_TEST_BROKEN_QUATERNION_USE: TODO - switched from mat to mat.getTransposed() for downward compatibility.
 				//								   Not tested so far if this was correct or wrong before quaternion fix!
 				keyR->rotation= core::quaternion(mat.getTransposed());
 

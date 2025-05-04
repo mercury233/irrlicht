@@ -1,7 +1,7 @@
 VERSION_MAJOR = 1
 VERSION_MINOR = 8
-VERSION_RELEASE = 5
-# Irrlicht Engine 1.8.5
+VERSION_RELEASE = 6
+# Irrlicht Engine 1.8.6
 # Makefile for Linux
 #
 # To use, just run:
@@ -74,7 +74,7 @@ endif
 ifdef PROFILE
 CXXFLAGS += -pg
 endif
-CFLAGS := -O3 -fexpensive-optimizations -DPNG_THREAD_UNSAFE_OK -DPNG_NO_MMX_CODE -DPNG_NO_MNG_FEATURES
+CFLAGS += -O3 -fexpensive-optimizations -DPNG_THREAD_UNSAFE_OK -DPNG_NO_MMX_CODE -DPNG_NO_MNG_FEATURES
 
 sharedlib sharedlib_osx: CXXFLAGS += -fPIC
 sharedlib sharedlib_osx: CFLAGS += -fPIC

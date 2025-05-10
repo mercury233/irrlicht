@@ -482,7 +482,7 @@ core::dimension2d<u32> CGUIFont::getDimension(const wchar_t* text) const
 //! draws some text and clips it to the specified rectangle if wanted
 void CGUIFont::draw(const core::stringw& text, const core::rect<s32>& position,
 					video::SColor color,
-					bool hcenter, bool vcenter, const core::rect<s32>* clip
+					bool hcenter, bool vcenter, const core::rect<s32>* clip, bool usecolor
 				)
 {
 	if (!Driver || !SpriteBank)

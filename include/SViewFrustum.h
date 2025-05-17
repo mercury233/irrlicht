@@ -47,9 +47,6 @@ namespace scene
 		//! Default Constructor
 		SViewFrustum() {}
 
-		//! Copy Constructor
-		SViewFrustum(const SViewFrustum& other);
-
 		//! This constructor creates a view frustum based on a projection and/or view matrix.
 		SViewFrustum(const core::matrix4& mat);
 
@@ -122,22 +119,6 @@ namespace scene
 		core::matrix4 Matrices[ETS_COUNT_FRUSTUM];
 	};
 
-
-	/*!
-		Copy constructor ViewFrustum
-	*/
-	inline SViewFrustum::SViewFrustum(const SViewFrustum& other)
-	{
-		cameraPosition=other.cameraPosition;
-		boundingBox=other.boundingBox;
-
-		u32 i;
-		for (i=0; i<VF_PLANE_COUNT; ++i)
-			planes[i]=other.planes[i];
-
-		for (i=0; i<ETS_COUNT_FRUSTUM; ++i)
-			Matrices[i]=other.Matrices[i];
-	}
 
 	inline SViewFrustum::SViewFrustum(const core::matrix4& mat)
 	{

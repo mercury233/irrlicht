@@ -37,6 +37,9 @@
 #endif
 #endif
 #endif
+#ifdef _MSC_VER
+#pragma comment(lib, "imm32.lib")
+#endif
 
 namespace irr
 {

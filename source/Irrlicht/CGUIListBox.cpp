@@ -341,6 +341,7 @@ bool CGUIListBox::OnEvent(const SEvent& event)
 					{
 						if (KeyBuffer.equals_ignore_case(Items[current].text.subString(0,KeyBuffer.size())))
 						{
+							setSelected(current);
 							if (Parent && Selected != current && !Selecting && !MoveOverSelect)
 							{
 								SEvent e;
@@ -350,7 +351,6 @@ bool CGUIListBox::OnEvent(const SEvent& event)
 								e.GUIEvent.EventType = EGET_LISTBOX_CHANGED;
 								Parent->OnEvent(e);
 							}
-							setSelected(current);
 							return true;
 						}
 					}
@@ -361,6 +361,7 @@ bool CGUIListBox::OnEvent(const SEvent& event)
 					{
 						if (KeyBuffer.equals_ignore_case(Items[current].text.subString(0,KeyBuffer.size())))
 						{
+							setSelected(current);
 							if (Parent && Selected != current && !Selecting && !MoveOverSelect)
 							{
 								Selected = current;
@@ -371,7 +372,6 @@ bool CGUIListBox::OnEvent(const SEvent& event)
 								e.GUIEvent.EventType = EGET_LISTBOX_CHANGED;
 								Parent->OnEvent(e);
 							}
-							setSelected(current);
 							return true;
 						}
 					}

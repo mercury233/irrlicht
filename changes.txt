@@ -1,5 +1,6 @@
 --------------------------
 Changes in 1.8.6
+- Avoid compile warnings with newer compilers like gcc 14
 - Fix CGUIPanel (in Gui Editor) so horizontal scrollbar can get focus (Feature request #163). Thanks @yybbwc for reporting.
 - CXMeshFileLoader: fix buffer overreads with text format. Thanks @sfan5 for report and patch.
   Patch (commit 6f4f7c4 to Minetest): https://github.com/minetest/irrlicht/commit/6f4f7c4d75c9d563e98d3936ed8bc6e248dc14a8

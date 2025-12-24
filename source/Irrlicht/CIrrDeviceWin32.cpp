@@ -612,6 +612,7 @@ namespace
 	{
 		HWND hWnd;
 		irr::CIrrDeviceWin32* irrDev;
+		bool imeEnabled;
 	};
 	irr::core::list<SEnvMapper> EnvMap;
 
@@ -754,22 +755,32 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		return 0;
 	}
 
-	dev = getDeviceFromHWnd(hWnd);
-	if (dev)
+	SEnvMapper* env = getEnvMapperFromHWnd(hWnd);
+	if (env && env->irrDev)
 	{
+		dev = env->irrDev;
 		irr::gui::IGUIElement* ele = dev->getGUIEnvironment()->getFocus();
-		if (!ele || (ele->getType() != irr::gui::EGUIET_EDIT_BOX) || !ele->isEnabled())
+		bool enable = (ele && (ele->getType() == irr::gui::EGUIET_EDIT_BOX) && ele->isEnabled());
+
+		if (enable != env->imeEnabled)
 		{
-			HIMC hIMC = ImmGetContext(hWnd);
-			if (hIMC)
+			if (!enable)
 			{
-				ImmNotifyIME(hIMC, NI_COMPOSITIONSTR, CPS_COMPLETE, 0);
-				ImmReleaseContext(hWnd, hIMC);
+				HIMC hIMC = ImmGetContext(hWnd);
+				if (hIMC)
+				{
+					// When focus leaves the edit box, cancel the current composition to avoid
+					// committing unintended partial text.
+					ImmNotifyIME(hIMC, NI_COMPOSITIONSTR, CPS_CANCEL, 0);
+					ImmReleaseContext(hWnd, hIMC);
+				}
+				ImmAssociateContextEx(hWnd, NULL, 0);
 			}
-			ImmAssociateContextEx(hWnd, NULL, 0);
+			else
+				ImmAssociateContextEx(hWnd, NULL, IACE_DEFAULT);
+
+			env->imeEnabled = enable;
 		}
-		else
-			ImmAssociateContextEx(hWnd, NULL, IACE_DEFAULT);
 	}
 
 	switch (message)
@@ -832,12 +843,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			int conversionResult = ToAsciiEx(wParam,scanCode,allKeys,keyChars,0,KEYBOARD_INPUT_HKL);
 			if (conversionResult == 1)
 			{
-				WORD unicodeChar;
+				// ToAsciiEx writes translated ANSI chars into WORDs. Convert only the
+				// produced byte(s) instead of interpreting the whole WORD array as a byte buffer.
+				char bytes[2];
+				bytes[0] = static_cast<char>(keyChars[0] & 0xFF);
+				bytes[1] = static_cast<char>(keyChars[1] & 0xFF);
+				WORD unicodeChar = 0;
 				MultiByteToWideChar(
 						KEYBOARD_INPUT_CODEPAGE,
 						MB_PRECOMPOSED, // default
-						(LPCSTR)keyChars,
-						sizeof(keyChars),
+						bytes,
+						1,
 						(WCHAR*)&unicodeChar,
 						1 );
 				event.KeyInput.Char = unicodeChar;
@@ -932,17 +948,70 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		KEYBOARD_INPUT_CODEPAGE = LocaleIdToCodepage( LOWORD(KEYBOARD_INPUT_HKL) );
 		return 0;
 
+	case WM_IME_COMPOSITION:
+		{
+			// Prefer reading the IME result string directly.
+			// If we let DefWindowProc handle this, it may generate WM_IME_CHAR messages,
+			// which can lead to duplicate character events when we also handle IME.
+			if (lParam & GCS_RESULTSTR)
+			{
+				dev = getDeviceFromHWnd(hWnd);
+				if (dev)
+				{
+					HIMC hIMC = ImmGetContext(hWnd);
+					if (hIMC)
+					{
+						LONG bytes = ImmGetCompositionStringW(hIMC, GCS_RESULTSTR, NULL, 0);
+						if (bytes > 0)
+						{
+							const int wcharCount = bytes / (int)sizeof(WCHAR);
+							WCHAR* buffer = new WCHAR[wcharCount + 1];
+							ImmGetCompositionStringW(hIMC, GCS_RESULTSTR, buffer, bytes);
+							buffer[wcharCount] = 0;
+
+							event.EventType = irr::EET_KEY_INPUT_EVENT;
+							event.KeyInput.PressedDown = true;
+							event.KeyInput.Key = irr::KEY_ACCEPT;
+							event.KeyInput.Shift = 0;
+							event.KeyInput.Control = 0;
+
+							for (int i = 0; i < wcharCount; ++i)
+							{
+								event.KeyInput.Char = buffer[i];
+								dev->postEventFromUser(event);
+							}
+
+							delete[] buffer;
+						}
+						ImmReleaseContext(hWnd, hIMC);
+						// Remove GCS_RESULTSTR to prevent DefWindowProc from generating WM_IME_CHAR
+						lParam &= ~GCS_RESULTSTR;
+					}
+				}
+			}
+
+			if (lParam == 0)
+				return 0;
+
+			break;
+		}
+
 	case WM_IME_STARTCOMPOSITION:
 		{
 			dev = getDeviceFromHWnd(hWnd);
+			if (!dev)
+				break;
 			irr::gui::IGUIElement* ele = dev->getGUIEnvironment()->getFocus();
 			if (!ele)
 				break;
 			irr::core::position2di pos = ele->getAbsolutePosition().UpperLeftCorner;
 			COMPOSITIONFORM CompForm = { CFS_POINT, { pos.X, pos.Y + ele->getAbsolutePosition().getHeight() } };
 			HIMC hIMC = ImmGetContext(hWnd);
-			ImmSetCompositionWindow(hIMC, &CompForm);
-			ImmReleaseContext(hWnd, hIMC);
+			if (hIMC)
+			{
+				ImmSetCompositionWindow(hIMC, &CompForm);
+				ImmReleaseContext(hWnd, hIMC);
+			}
 		}
 		break;
 
@@ -962,11 +1031,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			ch[1] = 0;
 		}
 		WORD unicodeChar;
+		const int bytesLen = (wParam >> 8) ? 2 : 1;
 		MultiByteToWideChar(
 			KEYBOARD_INPUT_CODEPAGE,
 			MB_PRECOMPOSED, // default
 			(LPCSTR)ch,
-			sizeof(wParam),
+			bytesLen,
 			(WCHAR*)&unicodeChar,
 			1);
 		event.KeyInput.Char = unicodeChar;
@@ -1118,6 +1188,7 @@ CIrrDeviceWin32::CIrrDeviceWin32(const SIrrlichtCreationParameters& params)
 	SEnvMapper em;
 	em.irrDev = this;
 	em.hWnd = HWnd;
+	em.imeEnabled = true;
 	EnvMap.push_back(em);
 
 	// set this as active window

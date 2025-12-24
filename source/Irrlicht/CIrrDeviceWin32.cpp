@@ -23,6 +23,7 @@
 #include "IGUIEnvironment.h"
 #include "IGUIElement.h"
 #include <winuser.h>
+#include <imm.h>
 #if defined(_IRR_COMPILE_WITH_JOYSTICK_EVENTS_)
 #ifdef _IRR_COMPILE_WITH_DIRECTINPUT_JOYSTICK_
 #define DIRECTINPUT_VERSION 0x0800
@@ -833,33 +834,48 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			GetKeyboardState(allKeys);
 
+			// Ensure current key state reflects this message.
+			if (wParam < 256)
+			{
+				if (event.KeyInput.PressedDown)
+					allKeys[wParam] |= 0x80;
+				else
+					allKeys[wParam] &= ~0x80;
+			}
+
 			event.KeyInput.Shift = ((allKeys[VK_SHIFT] & 0x80)!=0);
 			event.KeyInput.Control = ((allKeys[VK_CONTROL] & 0x80)!=0);
 
-			// Handle unicode and deadkeys in a way that works since Windows 95 and nt4.0
-			// Using ToUnicode instead would be shorter, but would to my knowledge not run on 95 and 98.
-			WORD keyChars[2];
-			UINT scanCode = HIWORD(lParam);
-			int conversionResult = ToAsciiEx(wParam,scanCode,allKeys,keyChars,0,KEYBOARD_INPUT_HKL);
-			if (conversionResult == 1)
+			// Translate to Unicode using the active keyboard layout.
+			// We intentionally don't emit characters on key-up events.
+			if (event.KeyInput.PressedDown)
 			{
-				// ToAsciiEx writes translated ANSI chars into WORDs. Convert only the
-				// produced byte(s) instead of interpreting the whole WORD array as a byte buffer.
-				char bytes[2];
-				bytes[0] = static_cast<char>(keyChars[0] & 0xFF);
-				bytes[1] = static_cast<char>(keyChars[1] & 0xFF);
-				WORD unicodeChar = 0;
-				MultiByteToWideChar(
-						KEYBOARD_INPUT_CODEPAGE,
-						MB_PRECOMPOSED, // default
-						bytes,
-						1,
-						(WCHAR*)&unicodeChar,
-						1 );
-				event.KeyInput.Char = unicodeChar;
+				WCHAR unicodeBuf[8];
+				unicodeBuf[0] = 0;
+				UINT scanCode = (UINT)((lParam >> 16) & 0xFF);
+				int conversionResult = ToUnicodeEx((UINT)wParam, scanCode, allKeys, unicodeBuf,
+					(int)(sizeof(unicodeBuf) / sizeof(unicodeBuf[0])), 0, KEYBOARD_INPUT_HKL);
+
+				if (conversionResult == -1)
+				{
+					// Dead-key: clear the keyboard layout state and do not emit a character.
+					ToUnicodeEx((UINT)wParam, scanCode, allKeys, unicodeBuf,
+						(int)(sizeof(unicodeBuf) / sizeof(unicodeBuf[0])), 0, KEYBOARD_INPUT_HKL);
+					event.KeyInput.Char = 0;
+				}
+				else if (conversionResult > 0)
+				{
+					event.KeyInput.Char = unicodeBuf[0];
+				}
+				else
+				{
+					event.KeyInput.Char = 0;
+				}
 			}
 			else
+			{
 				event.KeyInput.Char = 0;
+			}
 
 			// allow composing characters like '@' with Alt Gr on non-US keyboards
 			if ((allKeys[VK_MENU] & 0x80) != 0)
@@ -982,10 +998,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 							}
 
 							delete[] buffer;
+
+							// Remove GCS_RESULTSTR to prevent DefWindowProc from generating WM_IME_CHAR
+							lParam &= ~GCS_RESULTSTR;
 						}
 						ImmReleaseContext(hWnd, hIMC);
-						// Remove GCS_RESULTSTR to prevent DefWindowProc from generating WM_IME_CHAR
-						lParam &= ~GCS_RESULTSTR;
 					}
 				}
 			}
@@ -1188,8 +1205,11 @@ CIrrDeviceWin32::CIrrDeviceWin32(const SIrrlichtCreationParameters& params)
 	SEnvMapper em;
 	em.irrDev = this;
 	em.hWnd = HWnd;
-	em.imeEnabled = true;
+	em.imeEnabled = false;
 	EnvMap.push_back(em);
+	
+	// Explicitly disable IME initially, it will be enabled when an edit box gets focus
+	ImmAssociateContextEx(HWnd, NULL, 0);
 
 	// set this as active window
 	if (!ExternalWindow)

@@ -23,6 +23,7 @@
 #include "IGUIEnvironment.h"
 #include "IGUIElement.h"
 #include <winuser.h>
+#include <imm.h>
 #if defined(_IRR_COMPILE_WITH_JOYSTICK_EVENTS_)
 #ifdef _IRR_COMPILE_WITH_DIRECTINPUT_JOYSTICK_
 #define DIRECTINPUT_VERSION 0x0800
@@ -997,10 +998,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 							}
 
 							delete[] buffer;
-						}
-						ImmReleaseContext(hWnd, hIMC);
+
 							// Remove GCS_RESULTSTR to prevent DefWindowProc from generating WM_IME_CHAR
 							lParam &= ~GCS_RESULTSTR;
+						}
+						ImmReleaseContext(hWnd, hIMC);
 					}
 				}
 			}

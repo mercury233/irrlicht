@@ -1205,8 +1205,11 @@ CIrrDeviceWin32::CIrrDeviceWin32(const SIrrlichtCreationParameters& params)
 	SEnvMapper em;
 	em.irrDev = this;
 	em.hWnd = HWnd;
-	em.imeEnabled = true;
+	em.imeEnabled = false;
 	EnvMap.push_back(em);
+	
+	// Explicitly disable IME initially, it will be enabled when an edit box gets focus
+	ImmAssociateContextEx(HWnd, NULL, 0);
 
 	// set this as active window
 	if (!ExternalWindow)

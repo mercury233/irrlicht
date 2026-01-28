@@ -23,6 +23,7 @@
 #include "IGUIEnvironment.h"
 #include "IGUIElement.h"
 #include <winuser.h>
+#include <imm.h>
 #if defined(_IRR_COMPILE_WITH_JOYSTICK_EVENTS_)
 #ifdef _IRR_COMPILE_WITH_DIRECTINPUT_JOYSTICK_
 #define DIRECTINPUT_VERSION 0x0800
@@ -612,6 +613,7 @@ namespace
 	{
 		HWND hWnd;
 		irr::CIrrDeviceWin32* irrDev;
+		bool imeEnabled;
 	};
 	irr::core::list<SEnvMapper> EnvMap;
 
@@ -754,22 +756,32 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		return 0;
 	}
 
-	dev = getDeviceFromHWnd(hWnd);
-	if (dev)
+	SEnvMapper* env = getEnvMapperFromHWnd(hWnd);
+	if (env && env->irrDev)
 	{
+		dev = env->irrDev;
 		irr::gui::IGUIElement* ele = dev->getGUIEnvironment()->getFocus();
-		if (!ele || (ele->getType() != irr::gui::EGUIET_EDIT_BOX) || !ele->isEnabled())
+		bool enable = (ele && (ele->getType() == irr::gui::EGUIET_EDIT_BOX) && ele->isEnabled());
+
+		if (enable != env->imeEnabled)
 		{
-			HIMC hIMC = ImmGetContext(hWnd);
-			if (hIMC)
+			if (!enable)
 			{
-				ImmNotifyIME(hIMC, NI_COMPOSITIONSTR, CPS_COMPLETE, 0);
-				ImmReleaseContext(hWnd, hIMC);
+				HIMC hIMC = ImmGetContext(hWnd);
+				if (hIMC)
+				{
+					// When focus leaves the edit box, cancel the current composition to avoid
+					// committing unintended partial text.
+					ImmNotifyIME(hIMC, NI_COMPOSITIONSTR, CPS_CANCEL, 0);
+					ImmReleaseContext(hWnd, hIMC);
+				}
+				ImmAssociateContextEx(hWnd, NULL, 0);
 			}
-			ImmAssociateContextEx(hWnd, NULL, 0);
+			else
+				ImmAssociateContextEx(hWnd, NULL, IACE_DEFAULT);
+
+			env->imeEnabled = enable;
 		}
-		else
-			ImmAssociateContextEx(hWnd, NULL, IACE_DEFAULT);
 	}
 
 	switch (message)
@@ -822,28 +834,48 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			GetKeyboardState(allKeys);
 
+			// Ensure current key state reflects this message.
+			if (wParam < 256)
+			{
+				if (event.KeyInput.PressedDown)
+					allKeys[wParam] |= 0x80;
+				else
+					allKeys[wParam] &= ~0x80;
+			}
+
 			event.KeyInput.Shift = ((allKeys[VK_SHIFT] & 0x80)!=0);
 			event.KeyInput.Control = ((allKeys[VK_CONTROL] & 0x80)!=0);
 
-			// Handle unicode and deadkeys in a way that works since Windows 95 and nt4.0
-			// Using ToUnicode instead would be shorter, but would to my knowledge not run on 95 and 98.
-			WORD keyChars[2];
-			UINT scanCode = HIWORD(lParam);
-			int conversionResult = ToAsciiEx(wParam,scanCode,allKeys,keyChars,0,KEYBOARD_INPUT_HKL);
-			if (conversionResult == 1)
+			// Translate to Unicode using the active keyboard layout.
+			// We intentionally don't emit characters on key-up events.
+			if (event.KeyInput.PressedDown)
 			{
-				WORD unicodeChar;
-				MultiByteToWideChar(
-						KEYBOARD_INPUT_CODEPAGE,
-						MB_PRECOMPOSED, // default
-						(LPCSTR)keyChars,
-						sizeof(keyChars),
-						(WCHAR*)&unicodeChar,
-						1 );
-				event.KeyInput.Char = unicodeChar;
+				WCHAR unicodeBuf[8];
+				unicodeBuf[0] = 0;
+				UINT scanCode = (UINT)((lParam >> 16) & 0xFF);
+				int conversionResult = ToUnicodeEx((UINT)wParam, scanCode, allKeys, unicodeBuf,
+					(int)(sizeof(unicodeBuf) / sizeof(unicodeBuf[0])), 0, KEYBOARD_INPUT_HKL);
+
+				if (conversionResult == -1)
+				{
+					// Dead-key: clear the keyboard layout state and do not emit a character.
+					ToUnicodeEx((UINT)wParam, scanCode, allKeys, unicodeBuf,
+						(int)(sizeof(unicodeBuf) / sizeof(unicodeBuf[0])), 0, KEYBOARD_INPUT_HKL);
+					event.KeyInput.Char = 0;
+				}
+				else if (conversionResult > 0)
+				{
+					event.KeyInput.Char = unicodeBuf[0];
+				}
+				else
+				{
+					event.KeyInput.Char = 0;
+				}
 			}
 			else
+			{
 				event.KeyInput.Char = 0;
+			}
 
 			// allow composing characters like '@' with Alt Gr on non-US keyboards
 			if ((allKeys[VK_MENU] & 0x80) != 0)
@@ -932,17 +964,71 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		KEYBOARD_INPUT_CODEPAGE = LocaleIdToCodepage( LOWORD(KEYBOARD_INPUT_HKL) );
 		return 0;
 
+	case WM_IME_COMPOSITION:
+		{
+			// Prefer reading the IME result string directly.
+			// If we let DefWindowProc handle this, it may generate WM_IME_CHAR messages,
+			// which can lead to duplicate character events when we also handle IME.
+			if (lParam & GCS_RESULTSTR)
+			{
+				dev = getDeviceFromHWnd(hWnd);
+				if (dev)
+				{
+					HIMC hIMC = ImmGetContext(hWnd);
+					if (hIMC)
+					{
+						LONG bytes = ImmGetCompositionStringW(hIMC, GCS_RESULTSTR, NULL, 0);
+						if (bytes > 0)
+						{
+							const int wcharCount = bytes / (int)sizeof(WCHAR);
+							WCHAR* buffer = new WCHAR[wcharCount + 1];
+							ImmGetCompositionStringW(hIMC, GCS_RESULTSTR, buffer, bytes);
+							buffer[wcharCount] = 0;
+
+							event.EventType = irr::EET_KEY_INPUT_EVENT;
+							event.KeyInput.PressedDown = true;
+							event.KeyInput.Key = irr::KEY_ACCEPT;
+							event.KeyInput.Shift = 0;
+							event.KeyInput.Control = 0;
+
+							for (int i = 0; i < wcharCount; ++i)
+							{
+								event.KeyInput.Char = buffer[i];
+								dev->postEventFromUser(event);
+							}
+
+							delete[] buffer;
+
+							// Remove GCS_RESULTSTR to prevent DefWindowProc from generating WM_IME_CHAR
+							lParam &= ~GCS_RESULTSTR;
+						}
+						ImmReleaseContext(hWnd, hIMC);
+					}
+				}
+			}
+
+			if (lParam == 0)
+				return 0;
+
+			break;
+		}
+
 	case WM_IME_STARTCOMPOSITION:
 		{
 			dev = getDeviceFromHWnd(hWnd);
+			if (!dev)
+				break;
 			irr::gui::IGUIElement* ele = dev->getGUIEnvironment()->getFocus();
 			if (!ele)
 				break;
 			irr::core::position2di pos = ele->getAbsolutePosition().UpperLeftCorner;
 			COMPOSITIONFORM CompForm = { CFS_POINT, { pos.X, pos.Y + ele->getAbsolutePosition().getHeight() } };
 			HIMC hIMC = ImmGetContext(hWnd);
-			ImmSetCompositionWindow(hIMC, &CompForm);
-			ImmReleaseContext(hWnd, hIMC);
+			if (hIMC)
+			{
+				ImmSetCompositionWindow(hIMC, &CompForm);
+				ImmReleaseContext(hWnd, hIMC);
+			}
 		}
 		break;
 
@@ -962,11 +1048,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			ch[1] = 0;
 		}
 		WORD unicodeChar;
+		const int bytesLen = (wParam >> 8) ? 2 : 1;
 		MultiByteToWideChar(
 			KEYBOARD_INPUT_CODEPAGE,
 			MB_PRECOMPOSED, // default
 			(LPCSTR)ch,
-			sizeof(wParam),
+			bytesLen,
 			(WCHAR*)&unicodeChar,
 			1);
 		event.KeyInput.Char = unicodeChar;
@@ -1118,7 +1205,11 @@ CIrrDeviceWin32::CIrrDeviceWin32(const SIrrlichtCreationParameters& params)
 	SEnvMapper em;
 	em.irrDev = this;
 	em.hWnd = HWnd;
+	em.imeEnabled = false;
 	EnvMap.push_back(em);
+	
+	// Explicitly disable IME initially, it will be enabled when an edit box gets focus
+	ImmAssociateContextEx(HWnd, NULL, 0);
 
 	// set this as active window
 	if (!ExternalWindow)

@@ -1,4 +1,5 @@
 .DS_Store
+/source/Irrlicht/libwebp/webp_js/test_*.webp
 /source/Irrlicht/MacOSX/build
 /source/Irrlicht/MacOSX/MacOSX.xcodeproj/project.xcworkspace
 /source/Irrlicht/MacOSX/MacOSX.xcodeproj/xcuserdata

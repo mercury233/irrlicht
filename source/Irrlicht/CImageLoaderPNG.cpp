@@ -69,7 +69,7 @@ bool CImageLoaderPng::isALoadableFileExtension(const io::path& filename) const
 bool CImageLoaderPng::isALoadableFileFormat(io::IReadFile* file) const
 {
 #ifdef _IRR_COMPILE_WITH_LIBPNG_
-	if (!file)
+	if (!(file && file->seek(0)))
 		return false;
 
 	png_byte buffer[8];
@@ -89,7 +89,7 @@ bool CImageLoaderPng::isALoadableFileFormat(io::IReadFile* file) const
 IImage* CImageLoaderPng::loadImage(io::IReadFile* file) const
 {
 #ifdef _IRR_COMPILE_WITH_LIBPNG_
-	if (!file)
+	if (!(file && file->seek(0)))
 		return 0;
 
 	video::IImage* image = 0;

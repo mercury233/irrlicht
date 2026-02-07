@@ -1,5 +1,6 @@
 --------------------------
 Changes in 1.8.6
+- Update libpng to 1.6.54 (from 1.6.37)
 - Avoid compile warnings with newer compilers like gcc 14
 - Fix CGUIPanel (in Gui Editor) so horizontal scrollbar can get focus (Feature request #163). Thanks @yybbwc for reporting.
 - CXMeshFileLoader: fix buffer overreads with text format. Thanks @sfan5 for report and patch.

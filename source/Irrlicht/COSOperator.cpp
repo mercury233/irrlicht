@@ -73,7 +73,7 @@ void COSOperator::copyToClipboard(const c8* text) const
 
 	EmptyClipboard();
 
-	HGLOBAL clipbuffer = GlobalAlloc(GMEM_DDESHARE, sizeof(wchar_t) * wlen);
+	HGLOBAL clipbuffer = GlobalAlloc(GMEM_MOVEABLE, sizeof(wchar_t) * wlen);
 	if (!clipbuffer)
 	{
 		CloseClipboard();

@@ -1265,6 +1265,7 @@
 		<Unit filename="libpng/pngset.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="libpng/pngstruct.h" />
 		<Unit filename="libpng/pngtrans.c">
 			<Option compilerVar="CC" />
 		</Unit>

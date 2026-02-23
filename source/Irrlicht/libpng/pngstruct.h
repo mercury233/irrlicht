@@ -24,7 +24,15 @@
    /* We must ensure that zlib uses 'const' in declarations. */
 #  define ZLIB_CONST
 #endif
-#include "zlib.h"
+/* Irrlicht change:
+   Avoid that build-in png uses a different zlib than the rest of Irrlicht.
+*/
+#include "IrrCompileConfig.h"
+#ifndef _IRR_USE_NON_SYSTEM_ZLIB_
+	#include <zlib.h> // use system lib
+#else
+	#include "../zlib/zlib.h"
+#endif
 #ifdef const
    /* zlib.h sometimes #defines const to nothing, undo this. */
 #  undef const

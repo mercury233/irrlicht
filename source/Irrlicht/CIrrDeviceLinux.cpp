@@ -1114,7 +1114,7 @@ bool CIrrDeviceLinux::run()
 						XChangeProperty (display,
 								req->requestor,
 								req->property,
-								req->target == X_ATOM_TEXT ? XA_STRING : req->target,
+								req->target == XA_STRING ? XA_STRING : X_ATOM_UTF8_STRING,
 								8, // format
 								PropModeReplace,
 								(unsigned char*) Clipboard.c_str(),
@@ -1123,10 +1123,12 @@ bool CIrrDeviceLinux::run()
 					}
 					else if ( req->target == X_ATOM_TARGETS )
 					{
-						long data[2];
-
-						data[0] = X_ATOM_TEXT;
-						data[1] = XA_STRING;
+						// Most preferred format first
+						Atom data[4];
+						data[0] = X_ATOM_UTF8_STRING;
+						data[1] = X_ATOM_TEXT;
+						data[2] = XA_STRING;
+						data[3] = X_ATOM_TARGETS;
 
 						XChangeProperty (display,
 								req->requestor,
@@ -1134,8 +1136,8 @@ bool CIrrDeviceLinux::run()
 								XA_ATOM,
 								32, // format
 								PropModeReplace,
-								(unsigned char *) &X_ATOM_UTF8_STRING,
-								1);
+								(unsigned char *)data,
+								4);
 						respond.xselection.property = req->property;
 					}
 					else
@@ -1882,36 +1884,63 @@ const c8* CIrrDeviceLinux::getTextFromClipboard() const
 	Clipboard = "";
 	if (ownerWindow != None )
 	{
-		XConvertSelection (display, X_ATOM_CLIPBOARD, X_ATOM_UTF8_STRING, X_ATOM_XSEL_DATA, window, CurrentTime);
-		XSync (display, 0);
-		XEvent event;
-		do nanosleep ((const struct timespec[]){{0, 1L}}, NULL);
-		while (!XCheckTypedEvent (display, SelectionNotify, &event));
-		if ( (event.xselection.selection == X_ATOM_CLIPBOARD) && event.xselection.property )
+		// First try UTF-8, then fall back to XA_STRING (ISO Latin-1)
+		Atom fmtsToTry[2] = { X_ATOM_UTF8_STRING, XA_STRING };
+		for (int fmtIdx = 0; fmtIdx < 2 && Clipboard.empty(); ++fmtIdx)
 		{
-			Atom type;
-			int format;
-			unsigned long size, dummy;
-			unsigned char *data;
-			int result = XGetWindowProperty (event.xselection.display,
-				event.xselection.requestor,
-				event.xselection.property,
-				0L,  // offset
-				(~0L), // length (max)
-				0, // Delete 0==false
-				AnyPropertyType, // AnyPropertyType or property identifier
-				&type, // return type
-				&format, // return format
-				&size, // number items
-				&dummy, // remaining bytes for partial reads
-				&data); // data
-			if ( result == Success
-				&& (type == X_ATOM_UTF8_STRING || type == XA_STRING) ) // not implemented: INCR (partial reads)
+			XConvertSelection (display, X_ATOM_CLIPBOARD, fmtsToTry[fmtIdx], X_ATOM_XSEL_DATA, window, CurrentTime);
+			XSync (display, 0);
+			XEvent event;
+			struct timespec deadline;
+			clock_gettime(CLOCK_MONOTONIC, &deadline);
+			deadline.tv_sec += 1;
+
+			bool gotSelectionNotify = false;
+			do
 			{
-				Clipboard = strndup((char*)data, size);
-				XFree (data);
+				struct timespec sleepTs = {0, 1000000L};
+				nanosleep (&sleepTs, NULL);
+				gotSelectionNotify = XCheckTypedEvent (display, SelectionNotify, &event) != 0;
+				if (!gotSelectionNotify)
+				{
+					struct timespec now;
+					clock_gettime(CLOCK_MONOTONIC, &now);
+					if (now.tv_sec > deadline.tv_sec || (now.tv_sec == deadline.tv_sec && now.tv_nsec >= deadline.tv_nsec))
+						break;
+				}
 			}
-			XDeleteProperty (event.xselection.display, event.xselection.requestor, event.xselection.property);
+			while (!gotSelectionNotify);
+
+			if (!gotSelectionNotify)
+				continue;
+			if ( (event.xselection.selection == X_ATOM_CLIPBOARD) && event.xselection.property )
+			{
+				Atom type;
+				int format;
+				unsigned long size, dummy;
+				unsigned char *data;
+				int result = XGetWindowProperty (event.xselection.display,
+					event.xselection.requestor,
+					event.xselection.property,
+					0L,  // offset
+					(~0L), // length (max)
+					0, // Delete 0==false
+					AnyPropertyType, // AnyPropertyType or property identifier
+					&type, // return type
+					&format, // return format
+					&size, // number items
+					&dummy, // remaining bytes for partial reads
+					&data); // data
+				if ( result == Success
+					&& data
+					&& (type == X_ATOM_UTF8_STRING || type == XA_STRING) ) // not implemented: INCR (partial reads)
+				{
+					Clipboard = core::stringc((const c8*)data, size);
+				}
+				if (data)
+					XFree (data);
+				XDeleteProperty (event.xselection.display, event.xselection.requestor, event.xselection.property);
+			}
 		}
 	}
 

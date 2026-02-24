@@ -1,5 +1,7 @@
 --------------------------
 Changes in 1.8.6
+- Fix MacOS 10.15 only rendering to quarter of window. 
+  Thanks @bridgeco for the patch: https://irrlicht.sourceforge.io/forum/viewtopic.php?f=7&t=52644
 - Update libpng to 1.6.54 (from 1.6.37)
 - Avoid compile warnings with newer compilers like gcc 14
 - Fix CGUIPanel (in Gui Editor) so horizontal scrollbar can get focus (Feature request #163). Thanks @yybbwc for reporting.

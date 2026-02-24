@@ -721,14 +721,20 @@ bool CIrrDeviceMacOSX::createWindow()
 						[Window setDelegate:(AppDelegate *)[NSApp delegate]];
 
 						if(CreationParams.DriverType == video::EDT_OPENGL)
+						{
+							[[Window contentView] setWantsBestResolutionOpenGLSurface:NO];
 							[OGLContext setView:[Window contentView]];
+						}
 
 						[Window setAcceptsMouseMovedEvents:TRUE];
 						[Window setIsVisible:TRUE];
 						[Window makeKeyAndOrderFront:nil];
 					}
 					else if(CreationParams.DriverType == video::EDT_OPENGL) //use another window for drawing
+					{
+						[(NSView*)CreationParams.WindowId setWantsBestResolutionOpenGLSurface:NO];
 						[OGLContext setView:(NSView*)CreationParams.WindowId];
+					}
 
 					if (CreationParams.DriverType == video::EDT_OPENGL)
 						CGLContext = (CGLContextObj) [OGLContext CGLContextObj];

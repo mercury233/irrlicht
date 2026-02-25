@@ -119,10 +119,13 @@ typedef double				f64;
 #include <wchar.h>
 #ifdef _IRR_WINDOWS_API_
 //! Defines for s{w,n}printf because these methods do not match the ISO C
-//! standard on Windows platforms, but it does on all others.
+//! standard on old Microsoft Visual C++, but it does on all others.
 //! These should be int snprintf(char *str, size_t size, const char *format, ...);
 //! and int swprintf(wchar_t *wcs, size_t maxlen, const wchar_t *format, ...);
-#if defined(_MSC_VER) && _MSC_VER > 1310 && !defined (_WIN32_WCE)
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+// Starting from Visual Studio 2015, the standard compliant versions of these
+// methods are available, so we don't need to redefine them.
+#elif defined(_MSC_VER) && _MSC_VER > 1310 && !defined (_WIN32_WCE)
 #define swprintf swprintf_s
 #define snprintf sprintf_s
 #elif !defined(__CYGWIN__)

@@ -141,7 +141,7 @@ IImage* CImageLoaderJPG::loadImage(io::IReadFile* file) const
 	return 0;
 	#else
 
-	if (!file)
+	if (!(file && file->seek(0)))
 		return 0;
 
 	Filename = file->getFileName();

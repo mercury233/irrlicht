@@ -1101,7 +1101,7 @@ CIrrDeviceWin32::CIrrDeviceWin32(const SIrrlichtCreationParameters& params)
 	// create the window if we need to and we do not use the null device
 	if (!CreationParams.WindowId && CreationParams.DriverType != video::EDT_NULL)
 	{
-		const fschar_t* ClassName = __TEXT("CIrrDeviceWin32");
+		const TCHAR* ClassName = __TEXT("CIrrDeviceWin32");
 
 		// Register Class
 		WNDCLASSEX wcex;
@@ -1472,7 +1472,7 @@ void CIrrDeviceWin32::closeDevice()
 	if (!ExternalWindow)
 	{
 		DestroyWindow(HWnd);
-		const fschar_t* ClassName = __TEXT("CIrrDeviceWin32");
+		const TCHAR* ClassName = __TEXT("CIrrDeviceWin32");
 		HINSTANCE hInstance = GetModuleHandle(0);
 		UnregisterClass(ClassName, hInstance);
 	}

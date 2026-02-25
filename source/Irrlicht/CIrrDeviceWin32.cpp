@@ -773,7 +773,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			event.KeyInput.Key = (irr::EKEY_CODE)wParam;
 			event.KeyInput.PressedDown = (message==WM_KEYDOWN || message == WM_SYSKEYDOWN);
 
-			const UINT MY_MAPVK_VSC_TO_VK_EX = 3; // MAPVK_VSC_TO_VK_EX should be in SDK according to MSDN, but isn't in mine.
+#ifdef MAPVK_VSC_TO_VK_EX
+			const UINT MY_MAPVK_VSC_TO_VK_EX = MAPVK_VSC_TO_VK_EX;
+#else
+ 			const UINT MY_MAPVK_VSC_TO_VK_EX = 3; // MAPVK_VSC_TO_VK_EX was missing in older SDK's
+#endif
 			if ( event.KeyInput.Key == irr::KEY_SHIFT )
 			{
 				// this will fail on systems before windows NT/2000/XP, not sure _what_ will return there instead.

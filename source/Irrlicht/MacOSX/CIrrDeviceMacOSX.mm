@@ -482,7 +482,6 @@ CIrrDeviceMacOSX::CIrrDeviceMacOSX(const SIrrlichtCreationParameters& param)
 	IsActive(true), IsFullscreen(false), IsShiftDown(false), IsControlDown(false), IsResizable(false)
 {
 	struct utsname name;
-	NSString *path;
 
 	#ifdef _DEBUG
 	setDebugName("CIrrDeviceMacOSX");
@@ -501,11 +500,13 @@ CIrrDeviceMacOSX::CIrrDeviceMacOSX(const SIrrlichtCreationParameters& param)
 			[NSApp finishLaunching];
 		}
 
-		path = [[[NSBundle mainBundle] bundlePath] stringByDeletingLastPathComponent];
-		chdir([path fileSystemRepresentation]);
-		[path release];
+		NSString* bundlePath = [[NSBundle mainBundle] bundlePath];
+		if ([[bundlePath lowercaseString] hasSuffix:@".app"]) {
+			NSString* path = [bundlePath stringByDeletingLastPathComponent];
+			chdir([path fileSystemRepresentation]);
+		}
 	}
-    NSWindow* a;
+
 	uname(&name);
 	Operator = new COSOperator(name.version);
 	os::Printer::log(name.version,ELL_INFORMATION);

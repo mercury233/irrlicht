@@ -1337,10 +1337,10 @@ void CGUIEditBox::inputChar(wchar_t c)
 			BlinkStartTime = os::Timer::getTime();
 			setTextMarkers(0, 0);
 		}
+		breakText();
+		calculateScrollPos();
+		sendGuiEvent(EGET_EDITBOX_CHANGED);
 	}
-	breakText();
-	calculateScrollPos();
-	sendGuiEvent(EGET_EDITBOX_CHANGED);
 }
 
 // calculate autoscroll

@@ -53,9 +53,6 @@ typedef __int16			s16;
 typedef signed short		s16;
 #endif
 
-//! 16 bit character variable.
-/** This is a typedef for wchar_t, it ensures portability of the engine. */
-typedef wchar_t			c16;
 
 
 //! 32 bit unsigned variable.

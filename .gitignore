@@ -41,6 +41,8 @@
 /source/Irrlicht/libpng/missing
 /source/Irrlicht/libpng/test-driver
 
+/source/Irrlicht/libwebp/webp_js/test_*.webp
+
 /source/Irrlicht/zlib/make_vms.com
 
 /bin/MacOSX

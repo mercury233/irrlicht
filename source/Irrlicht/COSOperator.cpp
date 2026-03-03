@@ -114,26 +114,36 @@ const c8* COSOperator::getTextFromClipboard() const
 	if (!OpenClipboard(NULL))
 		return 0;
 
+	static core::stringc ClipboardBuf;
 	char * buffer = 0;
 
 	HANDLE hData = GetClipboardData( CF_TEXT );
 	buffer = (char*)GlobalLock( hData );
+	if ( buffer )
+		ClipboardBuf = buffer;
+	else
+		ClipboardBuf = "";
 	GlobalUnlock( hData );
 	CloseClipboard();
-	return buffer;
+	return ClipboardBuf.c_str();
 
 #elif defined(_IRR_COMPILE_WITH_OSX_DEVICE_)
     NSString* str = nil;
     NSPasteboard* board = nil;
-    char* result = 0;
+    static core::stringc ClipboardBuf;
 
     board = [NSPasteboard generalPasteboard];
     str = [board stringForType:NSStringPboardType];
 
     if (str != nil)
-        result = (char*)[str cStringUsingEncoding:NSWindowsCP1252StringEncoding];
+    {
+        const char* result = [str cStringUsingEncoding:NSWindowsCP1252StringEncoding];
+        ClipboardBuf = result ? result : "";
+    }
+    else
+        ClipboardBuf = "";
 
-    return (result);
+    return ClipboardBuf.c_str();
 
 #elif defined(_IRR_COMPILE_WITH_X11_DEVICE_)
     if ( IrrDeviceLinux )

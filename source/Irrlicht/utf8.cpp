@@ -95,7 +95,10 @@ static u32 utf8codepoint(const char **_str)
 		octet -= (128+64);
 		octet2 = (u32) ((u8) *(++str));
 		if ((octet2 & (128+64)) != 128)  /* Format isn't 10xxxxxx? */
+		{
+			*_str = str + 1;  /* skip past bad byte */
 			return UNICODE_BOGUS_CHAR_VALUE;
+		}
 
 		*_str += 2;  /* skip to next possible start of codepoint. */
 		retval = ((octet << 6) | (octet2 - 128));
@@ -108,11 +111,17 @@ static u32 utf8codepoint(const char **_str)
 		octet -= (128+64+32);
 		octet2 = (u32) ((u8) *(++str));
 		if ((octet2 & (128+64)) != 128)  /* Format isn't 10xxxxxx? */
+		{
+			*_str = str + 1;  /* skip past bad byte */
 			return UNICODE_BOGUS_CHAR_VALUE;
+		}
 
 		octet3 = (u32) ((u8) *(++str));
 		if ((octet3 & (128+64)) != 128)  /* Format isn't 10xxxxxx? */
+		{
+			*_str = str + 1;  /* skip past bad byte */
 			return UNICODE_BOGUS_CHAR_VALUE;
+		}
 
 		*_str += 3;  /* skip to next possible start of codepoint. */
 		retval = ( ((octet << 12)) | ((octet2-128) << 6) | ((octet3-128)) );
@@ -140,15 +149,24 @@ static u32 utf8codepoint(const char **_str)
 		octet -= (128+64+32+16);
 		octet2 = (u32) ((u8) *(++str));
 		if ((octet2 & (128+64)) != 128)  /* Format isn't 10xxxxxx? */
+		{
+			*_str = str + 1;  /* skip past bad byte */
 			return UNICODE_BOGUS_CHAR_VALUE;
+		}
 
 		octet3 = (u32) ((u8) *(++str));
 		if ((octet3 & (128+64)) != 128)  /* Format isn't 10xxxxxx? */
+		{
+			*_str = str + 1;  /* skip past bad byte */
 			return UNICODE_BOGUS_CHAR_VALUE;
+		}
 
 		octet4 = (u32) ((u8) *(++str));
 		if ((octet4 & (128+64)) != 128)  /* Format isn't 10xxxxxx? */
+		{
+			*_str = str + 1;  /* skip past bad byte */
 			return UNICODE_BOGUS_CHAR_VALUE;
+		}
 
 		*_str += 4;  /* skip to next possible start of codepoint. */
 		retval = ( ((octet << 18)) | ((octet2 - 128) << 12) |
@@ -167,19 +185,31 @@ static u32 utf8codepoint(const char **_str)
 	{
 		octet = (u32) ((u8) *(++str));
 		if ((octet & (128+64)) != 128)	/* Format isn't 10xxxxxx? */
+		{
+			*_str = str + 1;  /* skip past bad byte */
 			return UNICODE_BOGUS_CHAR_VALUE;
+		}
 
 		octet = (u32) ((u8) *(++str));
 		if ((octet & (128+64)) != 128)	/* Format isn't 10xxxxxx? */
+		{
+			*_str = str + 1;  /* skip past bad byte */
 			return UNICODE_BOGUS_CHAR_VALUE;
+		}
 
 		octet = (u32) ((u8) *(++str));
 		if ((octet & (128+64)) != 128)	/* Format isn't 10xxxxxx? */
+		{
+			*_str = str + 1;  /* skip past bad byte */
 			return UNICODE_BOGUS_CHAR_VALUE;
+		}
 
 		octet = (u32) ((u8) *(++str));
 		if ((octet & (128+64)) != 128)	/* Format isn't 10xxxxxx? */
+		{
+			*_str = str + 1;  /* skip past bad byte */
 			return UNICODE_BOGUS_CHAR_VALUE;
+		}
 
 		*_str += 5;  /* skip to next possible start of codepoint. */
 		return UNICODE_BOGUS_CHAR_VALUE;
@@ -189,23 +219,38 @@ static u32 utf8codepoint(const char **_str)
 	{
 		octet = (u32) ((u8) *(++str));
 		if ((octet & (128+64)) != 128)	/* Format isn't 10xxxxxx? */
+		{
+			*_str = str + 1;  /* skip past bad byte */
 			return UNICODE_BOGUS_CHAR_VALUE;
+		}
 
 		octet = (u32) ((u8) *(++str));
 		if ((octet & (128+64)) != 128)	/* Format isn't 10xxxxxx? */
+		{
+			*_str = str + 1;  /* skip past bad byte */
 			return UNICODE_BOGUS_CHAR_VALUE;
+		}
 
 		octet = (u32) ((u8) *(++str));
 		if ((octet & (128+64)) != 128)	/* Format isn't 10xxxxxx? */
+		{
+			*_str = str + 1;  /* skip past bad byte */
 			return UNICODE_BOGUS_CHAR_VALUE;
+		}
 
 		octet = (u32) ((u8) *(++str));
 		if ((octet & (128+64)) != 128)	/* Format isn't 10xxxxxx? */
+		{
+			*_str = str + 1;  /* skip past bad byte */
 			return UNICODE_BOGUS_CHAR_VALUE;
+		}
 
 		octet = (u32) ((u8) *(++str));
 		if ((octet & (128+64)) != 128)	/* Format isn't 10xxxxxx? */
+		{
+			*_str = str + 1;  /* skip past bad byte */
 			return UNICODE_BOGUS_CHAR_VALUE;
+		}
 
 		*_str += 6;  /* skip to next possible start of codepoint. */
 		return UNICODE_BOGUS_CHAR_VALUE;
@@ -351,8 +396,8 @@ static void PHYSFS_utf8FromUcs4(const u32 *src, char *dst, u64 len)
 
 static void PHYSFS_utf8FromUcs2(const u16 *src, char *dst, u64 len)
 {
-	UTF8FROMTYPE(u64, src, dst, len);
-} /* PHYSFS_utf8FromUcs4 */
+	UTF8FROMTYPE(u16, src, dst, len);
+} /* PHYSFS_utf8FromUcs2 */
 
 #undef UTF8FROMTYPE
 

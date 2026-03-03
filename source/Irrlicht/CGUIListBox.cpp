@@ -428,7 +428,7 @@ bool CGUIListBox::OnEvent(const SEvent& event)
 				}
 
 				case EMIE_MOUSE_MOVED:
-					if (Selecting || MoveOverSelect)
+					if (MoveOverSelect)
 					{
 						if (isPointInside(p))
 						{

@@ -502,7 +502,7 @@ bool SJoystickWin32Control::activateJoysticks(core::array<SJoystickInfo> & joyst
 	for(joystick = 0; joystick < joystickInfo.size(); ++joystick)
 	{
 		char logString[256];
-		(void)sprintf(logString, "Found joystick %d, %d axes, %d buttons '%s'",
+		(void)snprintf_irr(logString, sizeof(logString), "Found joystick %d, %d axes, %d buttons '%s'",
 			joystick, joystickInfo[joystick].Axes,
 			joystickInfo[joystick].Buttons, joystickInfo[joystick].Name.c_str());
 		os::Printer::log(logString, ELL_INFORMATION);
@@ -1096,12 +1096,12 @@ void CIrrDeviceWin32::resizeIfNecessary()
 
 	if (r.right < 2 || r.bottom < 2)
 	{
-		sprintf(tmp, "Ignoring resize operation to (%ld %ld)", r.right, r.bottom);
+		snprintf_irr(tmp, sizeof(tmp), "Ignoring resize operation to (%ld %ld)", r.right, r.bottom);
 		os::Printer::log(tmp);
 	}
 	else
 	{
-		sprintf(tmp, "Resizing window (%ld %ld)", r.right, r.bottom);
+		snprintf_irr(tmp, sizeof(tmp), "Resizing window (%ld %ld)", r.right, r.bottom);
 		os::Printer::log(tmp);
 
 		getVideoDriver()->OnResize(irr::core::dimension2du((u32)r.right, (u32)r.bottom));
@@ -1513,7 +1513,7 @@ void CIrrDeviceWin32::getWindowsVersion(core::stringc& out)
 
 		if (osvi.dwMajorVersion <= 4 )
 		{
-			sprintf(tmp, "version %lu.%lu %s (Build %lu)",
+			snprintf_irr(tmp, sizeof(tmp), "version %lu.%lu %s (Build %lu)",
 					osvi.dwMajorVersion,
 					osvi.dwMinorVersion,
 					irr::core::stringc(osvi.szCSDVersion).c_str(),
@@ -1521,7 +1521,7 @@ void CIrrDeviceWin32::getWindowsVersion(core::stringc& out)
 		}
 		else
 		{
-			sprintf(tmp, "%s (Build %lu)", irr::core::stringc(osvi.szCSDVersion).c_str(),
+			snprintf_irr(tmp, sizeof(tmp), "%s (Build %lu)", irr::core::stringc(osvi.szCSDVersion).c_str(),
 			osvi.dwBuildNumber & 0xFFFF);
 		}
 

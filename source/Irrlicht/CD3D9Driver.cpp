@@ -203,7 +203,7 @@ bool CD3D9Driver::initDriver(HWND hwnd, bool pureSoftware)
 		s32 SubVersion = HIWORD(dai.DriverVersion.LowPart);
 		s32 Build = LOWORD(dai.DriverVersion.LowPart);
 
-		sprintf(tmp, "%s %s %d.%d.%d.%d", dai.Description, dai.Driver, Product, Version,
+		snprintf_irr(tmp, sizeof(tmp), "%s %s %d.%d.%d.%d", dai.Description, dai.Driver, Product, Version,
 			SubVersion, Build);
 		os::Printer::log(tmp, ELL_INFORMATION);
 

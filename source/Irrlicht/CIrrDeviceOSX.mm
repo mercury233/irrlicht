@@ -1170,7 +1170,11 @@ void CIrrDeviceMacOSX::postKeyEvent(void *event,irr::SEvent &ievent,bool pressed
 		mkey = mchar = 0;
 		skipCommand = false;
 		c = [str characterAtIndex:0];
-		mchar = c;
+		// Apple uses 0xF700-0xF8FF for navigation/function keys (Private Use Area).
+		// These are not text characters; keep mchar as 0 so CGUIEditBox routes them
+		// to the special-key branch (which checks Char == 0) instead of inputChar().
+		if (c < 0xF700)
+			mchar = c;
 
 		iter = KeyCodes.find([(NSEvent *)event keyCode]);
 		if (iter != KeyCodes.end())
@@ -1192,15 +1196,19 @@ void CIrrDeviceMacOSX::postKeyEvent(void *event,irr::SEvent &ievent,bool pressed
 				{
 					mchar = cStr[0];
 					mkey = toupper(mchar);
-					if ([(NSEvent *)event modifierFlags] & NSCommandKeyMask)
-					{
-						if (mkey == 'C' || mkey == 'V' || mkey == 'X')
-						{
-							mchar = 0;
-							skipCommand = true;
-						}
-					}
 				}
+			}
+		}
+
+		// Handle Command+C/V/X/A as Control+C/V/X/A regardless of how mkey was resolved.
+		// Previously this check only ran in the fallback path, so keys found via
+		// KeyCodes (the common case) never triggered it.
+		if ([(NSEvent *)event modifierFlags] & NSCommandKeyMask)
+		{
+			if (mkey == 'C' || mkey == 'V' || mkey == 'X' || mkey == 'A')
+			{
+				mchar = 0;
+				skipCommand = true;
 			}
 		}
 

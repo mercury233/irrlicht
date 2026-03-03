@@ -682,6 +682,16 @@ bool CGUIEditBox::processKey(const SEvent& event)
 		case KEY_ESCAPE:
 		case KEY_TAB:
 		case KEY_SHIFT:
+		case KEY_LSHIFT:
+		case KEY_RSHIFT:
+		case KEY_MENU:
+		case KEY_LMENU:
+		case KEY_RMENU:
+		case KEY_LWIN:
+		case KEY_RWIN:
+		case KEY_CAPITAL:
+		case KEY_NUMLOCK:
+		case KEY_SCROLL:
 		case KEY_F1:
 		case KEY_F2:
 		case KEY_F3:

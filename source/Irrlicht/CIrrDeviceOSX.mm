@@ -565,7 +565,6 @@ CIrrDeviceMacOSX::CIrrDeviceMacOSX(const SIrrlichtCreationParameters& param)
 	SoftwareDriverTarget(nil),SoftwareRendererType(0)
 {
 	struct utsname name;
-	NSString *path;
 
 #ifdef _DEBUG
 	setDebugName("CIrrDeviceMacOSX");
@@ -599,10 +598,11 @@ CIrrDeviceMacOSX::CIrrDeviceMacOSX(const SIrrlichtCreationParameters& param)
             [NSApp finishLaunching];
 		}
 
-		path = [[NSBundle mainBundle] bundlePath];
-        path = [path stringByAppendingString:@"/Contents/Resources"];
-		chdir([path fileSystemRepresentation]);
-        [path release];
+        NSString* bundlePath = [[NSBundle mainBundle] bundlePath];
+        if ([[bundlePath lowercaseString] hasSuffix:@".app"]) {
+            NSString* path = [bundlePath stringByAppendingString:@"/Contents/Resources"];
+            chdir([path fileSystemRepresentation]);
+        }
 	}
 
 	uname(&name);

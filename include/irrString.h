@@ -1515,6 +1515,41 @@ static size_t multibyteToWString(string<wchar_t>& destination, const char* sourc
 	}
 }
 
+//! Converts UTF-8 string to wide character string.
+/** Uses utf8ToWchar which is platform independent and don't rely on c locale settings.
+\return Pointer to newly allocated wide character string; caller must delete[]. */
+static inline wchar_t* toWideChar(const char* p)
+{
+	if (!p)
+	{
+		wchar_t* ws = new wchar_t[1];
+		ws[0] = 0;
+		return ws;
+	}
+	const size_t len = strlen(p) + 1;
+	wchar_t* ws = new wchar_t[len];
+	utf8ToWchar(p, ws, len * sizeof(wchar_t));
+	return ws;
+}
+
+//! Converts wide character string to UTF-8 string.
+/** Uses wcharToUtf8 which is platform independent and don't rely on c locale settings.
+\return Pointer to newly allocated multibyte string; caller must delete[]. */
+static inline char* toMultiByte(const wchar_t* p)
+{
+	if (!p)
+	{
+		char* cs = new char[1];
+		cs[0] = 0;
+		return cs;
+	}
+	// Worst case: 4 UTF-8 bytes per wchar_t codepoint
+	const size_t bufSize = wcslen(p) * 4 + 1;
+	char* cs = new char[bufSize];
+	wcharToUtf8(p, cs, bufSize);
+	return cs;
+}
+
 
 } // end namespace core
 } // end namespace irr

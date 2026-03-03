@@ -584,6 +584,8 @@ CIrrDeviceMacOSX::CIrrDeviceMacOSX(const SIrrlichtCreationParameters& param)
             // Create menu
             
             NSString* bundleName = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleName"];
+            if (!bundleName)
+                bundleName = @"Irrlicht";
             
             NSMenu* mainMenu = [[[NSMenu alloc] initWithTitle:@"MainMenu"] autorelease];
             NSMenu* menu = [[[NSMenu alloc] initWithTitle:bundleName] autorelease];

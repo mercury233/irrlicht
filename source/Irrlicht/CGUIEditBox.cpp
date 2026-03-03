@@ -294,9 +294,10 @@ bool CGUIEditBox::processKey(const SEvent& event)
 				const s32 realmbgn = MarkBegin < MarkEnd ? MarkBegin : MarkEnd;
 				const s32 realmend = MarkBegin < MarkEnd ? MarkEnd : MarkBegin;
 
-				core::stringc s;
-				s = Text.subString(realmbgn, realmend - realmbgn).c_str();
-				Operator->copyToClipboard(s.c_str());
+				core::stringw s = Text.subString(realmbgn, realmend - realmbgn);
+				c8* mb = core::toMultiByte(s.c_str());
+				Operator->copyToClipboard(mb);
+				delete[] mb;
 			}
 			break;
 		case KEY_KEY_X:
@@ -307,9 +308,10 @@ bool CGUIEditBox::processKey(const SEvent& event)
 				const s32 realmend = MarkBegin < MarkEnd ? MarkEnd : MarkBegin;
 
 				// copy
-				core::stringc sc;
-				sc = Text.subString(realmbgn, realmend - realmbgn).c_str();
-				Operator->copyToClipboard(sc.c_str());
+				core::stringw sc = Text.subString(realmbgn, realmend - realmbgn);
+				c8* mb = core::toMultiByte(sc.c_str());
+				Operator->copyToClipboard(mb);
+				delete[] mb;
 
 				if (isEnabled())
 				{
@@ -340,8 +342,9 @@ bool CGUIEditBox::processKey(const SEvent& event)
 				const c8* p = Operator->getTextFromClipboard();
 				if (p)
 				{
-					irr::core::stringw widep;
-					core::multibyteToWString(widep, p);
+					wchar_t* ws = core::toWideChar(p);
+					irr::core::stringw widep(ws);
+					delete[] ws;
 
 					if (MarkBegin == MarkEnd)
 					{

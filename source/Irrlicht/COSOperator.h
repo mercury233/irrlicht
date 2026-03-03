@@ -47,6 +47,7 @@ public:
 private:
 
 	core::stringc OperatingSystem;
+	mutable core::stringc ClipboardBuffer;
 
 #if defined(_IRR_COMPILE_WITH_X11_DEVICE_)
 	CIrrDeviceLinux * IrrDeviceLinux;

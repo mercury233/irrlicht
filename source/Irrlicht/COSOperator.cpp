@@ -54,45 +54,63 @@ const core::stringc& COSOperator::getOperatingSystemVersion() const
 
 
 //! copies text to the clipboard
+//! text must be encoded in the system multibyte format (UTF-8 on Linux/macOS)
 void COSOperator::copyToClipboard(const c8* text) const
 {
-	if (strlen(text)==0)
+	if (!text || text[0] == '\0')
 		return;
 
 // Windows version
 #if defined(_IRR_XBOX_PLATFORM_)
 #elif defined(_IRR_WINDOWS_API_)
-	if (!OpenClipboard(NULL) || text == 0)
+	// Convert UTF-8 to UTF-16 for the Windows clipboard
+	int wlen = MultiByteToWideChar(CP_UTF8, 0, text, -1, NULL, 0);
+	if (wlen == 0)
+		return;
+
+	if (!OpenClipboard(NULL))
 		return;
 
 	EmptyClipboard();
 
-	HGLOBAL clipbuffer;
-	char * buffer;
-
-	clipbuffer = GlobalAlloc(GMEM_DDESHARE, strlen(text)+1);
-	if ( clipbuffer )
+	HGLOBAL clipbuffer = GlobalAlloc(GMEM_MOVEABLE, sizeof(wchar_t) * wlen);
+	if (!clipbuffer)
 	{
-		buffer = (char*)GlobalLock(clipbuffer);
-		if ( buffer )
-		{
-			strcpy(buffer, text);
-		}
-		GlobalUnlock(clipbuffer);
-		SetClipboardData(CF_TEXT, clipbuffer);
+		CloseClipboard();
+		return;
 	}
+
+	wchar_t* buffer = (wchar_t*)GlobalLock(clipbuffer);
+	if (!buffer)
+	{
+		GlobalFree(clipbuffer);
+		CloseClipboard();
+		return;
+	}
+
+	if (MultiByteToWideChar(CP_UTF8, 0, text, -1, buffer, wlen) == 0)
+	{
+		GlobalUnlock(clipbuffer);
+		GlobalFree(clipbuffer);
+		CloseClipboard();
+		return;
+	}
+
+	GlobalUnlock(clipbuffer);
+	if (!SetClipboardData(CF_UNICODETEXT, clipbuffer))
+		GlobalFree(clipbuffer);
 	CloseClipboard();
 
 #elif defined(_IRR_COMPILE_WITH_OSX_DEVICE_)
-    NSString *str = nil;
-    NSPasteboard *board = nil;
-
     if ((text != NULL) && (strlen(text) > 0))
     {
-        str = [NSString stringWithCString:text encoding:NSWindowsCP1252StringEncoding];
-        board = [NSPasteboard generalPasteboard];
-        [board declareTypes:[NSArray arrayWithObject:NSStringPboardType] owner:NSApp];
-        [board setString:str forType:NSStringPboardType];
+        NSString* str = [NSString stringWithUTF8String:text];
+        if (str)
+        {
+            NSPasteboard* board = [NSPasteboard generalPasteboard];
+            [board declareTypes:@[NSPasteboardTypeString] owner:NSApp];
+            [board setString:str forType:NSPasteboardTypeString];
+        }
     }
 
 #elif defined(_IRR_COMPILE_WITH_X11_DEVICE_)
@@ -106,6 +124,7 @@ void COSOperator::copyToClipboard(const c8* text) const
 
 //! gets text from the clipboard
 //! \return Returns 0 if no string is in there.
+//! Result is encoded in the system multibyte format (UTF-8 on Linux/macOS)
 const c8* COSOperator::getTextFromClipboard() const
 {
 #if defined(_IRR_XBOX_PLATFORM_)
@@ -114,41 +133,39 @@ const c8* COSOperator::getTextFromClipboard() const
 	if (!OpenClipboard(NULL))
 		return 0;
 
-	static core::stringc ClipboardBuf;
-	char * buffer = 0;
-
-	HANDLE hData = GetClipboardData( CF_TEXT );
-	buffer = (char*)GlobalLock( hData );
-	if ( buffer )
-		ClipboardBuf = buffer;
-	else
-		ClipboardBuf = "";
-	GlobalUnlock( hData );
+	ClipboardBuffer = "";
+	HANDLE hData = GetClipboardData(CF_UNICODETEXT);
+	if (hData)
+	{
+		wchar_t* wbuffer = (wchar_t*)GlobalLock(hData);
+		if (wbuffer)
+		{
+			// Convert UTF-16 clipboard data to UTF-8 and store in member buffer
+			// so the returned pointer remains valid after CloseClipboard()
+			int len = WideCharToMultiByte(CP_UTF8, 0, wbuffer, -1, NULL, 0, NULL, NULL);
+			if (len > 0)
+			{
+				c8* tmp = new c8[len];
+				WideCharToMultiByte(CP_UTF8, 0, wbuffer, -1, tmp, len, NULL, NULL);
+				ClipboardBuffer = tmp;
+				delete[] tmp;
+			}
+			GlobalUnlock(hData);
+		}
+	}
 	CloseClipboard();
-	return ClipboardBuf.c_str();
+	return ClipboardBuffer.c_str();
 
 #elif defined(_IRR_COMPILE_WITH_OSX_DEVICE_)
-    NSString* str = nil;
-    NSPasteboard* board = nil;
-    static core::stringc ClipboardBuf;
-
-    board = [NSPasteboard generalPasteboard];
-    str = [board stringForType:NSStringPboardType];
-
-    if (str != nil)
-    {
-        const char* result = [str cStringUsingEncoding:NSWindowsCP1252StringEncoding];
-        ClipboardBuf = result ? result : "";
-    }
-    else
-        ClipboardBuf = "";
-
-    return ClipboardBuf.c_str();
+    NSPasteboard* board = [NSPasteboard generalPasteboard];
+    NSString* str = [board stringForType:NSPasteboardTypeString];
+    const char* result = (str != nil) ? [str UTF8String] : nullptr;
+    ClipboardBuffer = result ? result : "";
+    return ClipboardBuffer.c_str();
 
 #elif defined(_IRR_COMPILE_WITH_X11_DEVICE_)
-    if ( IrrDeviceLinux )
-        return IrrDeviceLinux->getTextFromClipboard();
-    return 0;
+    ClipboardBuffer = IrrDeviceLinux ? IrrDeviceLinux->getTextFromClipboard() : "";
+    return ClipboardBuffer.c_str();
 
 #else
 

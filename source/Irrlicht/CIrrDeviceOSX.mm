@@ -1001,7 +1001,18 @@ bool CIrrDeviceMacOSX::run()
 
 			case NSLeftMouseDown:
 				ievent.EventType = irr::EET_MOUSE_INPUT_EVENT;
-				ievent.MouseInput.Event = irr::EMIE_LMOUSE_PRESSED_DOWN;
+				switch ([(NSEvent *)event clickCount])
+				{
+					case 2:
+						ievent.MouseInput.Event = irr::EMIE_LMOUSE_DOUBLE_CLICK;
+						break;
+					case 3:
+						ievent.MouseInput.Event = irr::EMIE_LMOUSE_TRIPLE_CLICK;
+						break;
+					default:
+						ievent.MouseInput.Event = irr::EMIE_LMOUSE_PRESSED_DOWN;
+						break;
+				}
 				MouseButtonStates |= irr::EMBSM_LEFT;
 				ievent.MouseInput.ButtonStates = MouseButtonStates;
 				postMouseEvent(event,ievent);
@@ -1017,7 +1028,18 @@ bool CIrrDeviceMacOSX::run()
 
 			case NSOtherMouseDown:
 				ievent.EventType = irr::EET_MOUSE_INPUT_EVENT;
-				ievent.MouseInput.Event = irr::EMIE_MMOUSE_PRESSED_DOWN;
+				switch ([(NSEvent *)event clickCount])
+				{
+					case 2:
+						ievent.MouseInput.Event = irr::EMIE_MMOUSE_DOUBLE_CLICK;
+						break;
+					case 3:
+						ievent.MouseInput.Event = irr::EMIE_MMOUSE_TRIPLE_CLICK;
+						break;
+					default:
+						ievent.MouseInput.Event = irr::EMIE_MMOUSE_PRESSED_DOWN;
+						break;
+				}
 				MouseButtonStates |= irr::EMBSM_MIDDLE;
 				ievent.MouseInput.ButtonStates = MouseButtonStates;
 				postMouseEvent(event,ievent);
@@ -1043,7 +1065,18 @@ bool CIrrDeviceMacOSX::run()
 
 			case NSRightMouseDown:
 				ievent.EventType = irr::EET_MOUSE_INPUT_EVENT;
-				ievent.MouseInput.Event = irr::EMIE_RMOUSE_PRESSED_DOWN;
+				switch ([(NSEvent *)event clickCount])
+				{
+					case 2:
+						ievent.MouseInput.Event = irr::EMIE_RMOUSE_DOUBLE_CLICK;
+						break;
+					case 3:
+						ievent.MouseInput.Event = irr::EMIE_RMOUSE_TRIPLE_CLICK;
+						break;
+					default:
+						ievent.MouseInput.Event = irr::EMIE_RMOUSE_PRESSED_DOWN;
+						break;
+				}
 				MouseButtonStates |= irr::EMBSM_RIGHT;
 				ievent.MouseInput.ButtonStates = MouseButtonStates;
 				postMouseEvent(event,ievent);

@@ -9,7 +9,6 @@
 #include <windows.h>
 #endif
 #else
-#include <locale.h>
 #include <string.h>
 #include <unistd.h>
 #ifndef _IRR_SOLARIS_PLATFORM_
@@ -55,30 +54,51 @@ const core::stringc& COSOperator::getOperatingSystemVersion() const
 
 
 //! copies text to the clipboard
-void COSOperator::copyToClipboard(const c16* text) const
+//! text must be encoded in the system multibyte format (UTF-8 on Linux/macOS)
+void COSOperator::copyToClipboard(const c8* text) const
 {
-	size_t len = wcslen(text);
-	if (len==0)
+	if (!text || text[0] == '\0')
 		return;
 
 // Windows version
 #if defined(_IRR_XBOX_PLATFORM_)
 #elif defined(_IRR_WINDOWS_API_)
-	if (!OpenClipboard(NULL) || text == 0)
+	// Convert UTF-8 to UTF-16 for the Windows clipboard
+	int wlen = MultiByteToWideChar(CP_UTF8, 0, text, -1, NULL, 0);
+	if (wlen == 0)
+		return;
+
+	if (!OpenClipboard(NULL))
 		return;
 
 	EmptyClipboard();
 
-	HGLOBAL clipbuffer;
-	wchar_t * buffer;
+	HGLOBAL clipbuffer = GlobalAlloc(GMEM_MOVEABLE, sizeof(wchar_t) * wlen);
+	if (!clipbuffer)
+	{
+		CloseClipboard();
+		return;
+	}
 
-	clipbuffer = GlobalAlloc(GMEM_DDESHARE, sizeof(wchar_t) * (len + 1));
-	buffer = (wchar_t*)GlobalLock(clipbuffer);
+	wchar_t* buffer = (wchar_t*)GlobalLock(clipbuffer);
+	if (!buffer)
+	{
+		GlobalFree(clipbuffer);
+		CloseClipboard();
+		return;
+	}
 
-	wcscpy(buffer, text);
+	if (MultiByteToWideChar(CP_UTF8, 0, text, -1, buffer, wlen) == 0)
+	{
+		GlobalUnlock(clipbuffer);
+		GlobalFree(clipbuffer);
+		CloseClipboard();
+		return;
+	}
 
 	GlobalUnlock(clipbuffer);
-	SetClipboardData(CF_UNICODETEXT, clipbuffer);
+	if (!SetClipboardData(CF_UNICODETEXT, clipbuffer))
+		GlobalFree(clipbuffer);
 	CloseClipboard();
 
 // MacOSX version
@@ -88,18 +108,7 @@ void COSOperator::copyToClipboard(const c16* text) const
 
 #elif defined(_IRR_COMPILE_WITH_X11_DEVICE_)
     if ( IrrDeviceLinux )
-	{
-		size_t wlen = sizeof(wchar_t) * (len + 1);
-		char ctext[wlen];
-
-		char* oldLocale = setlocale(LC_CTYPE, NULL);
-		setlocale(LC_CTYPE, "");
-		size_t lenNew = wcstombs(ctext, text, wlen);
-		ctext[lenNew] = 0;
-		setlocale(LC_CTYPE, oldLocale);
-
-		IrrDeviceLinux->copyToClipboard(ctext);
-	}
+        IrrDeviceLinux->copyToClipboard(text);
 #else
 
 #endif
@@ -108,7 +117,8 @@ void COSOperator::copyToClipboard(const c16* text) const
 
 //! gets text from the clipboard
 //! \return Returns 0 if no string is in there.
-const c16* COSOperator::getTextFromClipboard() const
+//! Result is encoded in the system multibyte format (UTF-8 on Linux/macOS)
+const c8* COSOperator::getTextFromClipboard() const
 {
 #if defined(_IRR_XBOX_PLATFORM_)
 		return 0;
@@ -116,29 +126,35 @@ const c16* COSOperator::getTextFromClipboard() const
 	if (!OpenClipboard(NULL))
 		return 0;
 
-	wchar_t * buffer = 0;
-
-	HANDLE hData = GetClipboardData( CF_UNICODETEXT );
-	buffer = (wchar_t*)GlobalLock( hData );
-	GlobalUnlock( hData );
+	ClipboardBuffer = "";
+	HANDLE hData = GetClipboardData(CF_UNICODETEXT);
+	if (hData)
+	{
+		wchar_t* wbuffer = (wchar_t*)GlobalLock(hData);
+		if (wbuffer)
+		{
+			// Convert UTF-16 clipboard data to UTF-8 and store in member buffer
+			// so the returned pointer remains valid after CloseClipboard()
+			int len = WideCharToMultiByte(CP_UTF8, 0, wbuffer, -1, NULL, 0, NULL, NULL);
+			if (len > 0)
+			{
+				c8* tmp = new c8[len];
+				WideCharToMultiByte(CP_UTF8, 0, wbuffer, -1, tmp, len, NULL, NULL);
+				ClipboardBuffer = tmp;
+				delete[] tmp;
+			}
+			GlobalUnlock(hData);
+		}
+	}
 	CloseClipboard();
-	return buffer;
+	return ClipboardBuffer.c_str();
 
 #elif defined(_IRR_COMPILE_WITH_OSX_DEVICE_)
 	return (OSXCopyFromClipboard());
 
 #elif defined(_IRR_COMPILE_WITH_X11_DEVICE_)
     if ( IrrDeviceLinux )
-	{
-		const c8 * p = IrrDeviceLinux->getTextFromClipboard();
-
-		char* oldLocale = setlocale(LC_CTYPE, NULL);
-		setlocale(LC_CTYPE, "");
-		wchar_t* ws = core::toWideChar(p);
-		setlocale(LC_CTYPE, oldLocale);
-
-		return ws;
-	}
+        return IrrDeviceLinux->getTextFromClipboard();
     return 0;
 
 #else

@@ -1360,14 +1360,46 @@ typedef string<c8> stringc;
 //! Typedef for wide character strings
 typedef string<wchar_t> stringw;
 
-//! wrap of mbstowcs
+//! Converts UTF-8/multibyte string to wide character string
+/** C locale must be set to UTF-8 for correct conversion.
+	\return Pointer to newly allocated wide character string; caller must delete[].
+	*/
 static inline wchar_t* toWideChar(const char* p)
 {
+	if (!p)
+	{
+		wchar_t* ws = new wchar_t[1];
+		ws[0] = 0;
+		return ws;
+	}
 	size_t lenOld = strlen(p);
 	wchar_t* ws = new wchar_t[lenOld + 1];
-	size_t lenNew = mbstowcs(ws, p, lenOld);
+	size_t lenNew = mbstowcs(ws, p, lenOld + 1);
+	if (lenNew == (size_t)-1) lenNew = 0;
 	ws[lenNew] = 0;
 	return ws;
+}
+
+//! Converts wide character string to UTF-8/multibyte string
+/** C locale must be set to UTF-8 for correct conversion.
+	\return Pointer to newly allocated multibyte string; caller must delete[].
+	*/
+static inline char* toMultiByte(const wchar_t* p)
+{
+	if (!p)
+	{
+		char* cs = new char[1];
+		cs[0] = 0;
+		return cs;
+	}
+	size_t lenOld = wcslen(p);
+	// Allocate worst-case buffer (MB_CUR_MAX bytes per wchar_t)
+	size_t bufSize = lenOld * MB_CUR_MAX + 1;
+	char* cs = new char[bufSize];
+	size_t lenNew = wcstombs(cs, p, bufSize - 1);
+	if (lenNew == (size_t)-1) lenNew = 0;
+	cs[lenNew] = 0;
+	return cs;
 }
 
 } // end namespace core

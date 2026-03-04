@@ -7,31 +7,32 @@
 #include "OSXClipboard.h"
 #import <Cocoa/Cocoa.h>
 
-void OSXCopyToClipboard(const wchar_t *text)
+void OSXCopyToClipboard(const char *text)
 {
-	NSString *str;
-	NSPasteboard *board;
-
-	if ((text != NULL) && (wcslen(text) > 0))
+	if (text != NULL && strlen(text) > 0)
 	{
-		str = [[NSString alloc] initWithBytes:text length:wcslen(text)*sizeof(*text) encoding:NSUTF32LittleEndianStringEncoding];
-		board = [NSPasteboard generalPasteboard];
-		[board declareTypes:[NSArray arrayWithObject:NSStringPboardType] owner:NSApp];
-		[board setString:str forType:NSStringPboardType];
+		NSString* str = [NSString stringWithUTF8String:text];
+		if (str)
+		{
+			NSPasteboard* board = [NSPasteboard generalPasteboard];
+			[board declareTypes:@[NSPasteboardTypeString] owner:NSApp];
+			[board setString:str forType:NSPasteboardTypeString];
+		}
 	}
 }
 
-wchar_t* OSXCopyFromClipboard()
+const char* OSXCopyFromClipboard()
 {
-	NSString* str;
-	NSPasteboard* board;
-	wchar_t* result;
-
-	result = NULL;
-	board = [NSPasteboard generalPasteboard];
-	str = [board stringForType:NSStringPboardType];
-	if (str != nil)
-		result = (wchar_t*)[str cStringUsingEncoding:NSUTF32LittleEndianStringEncoding];
-	return (result);
+	static irr::core::stringc buffer;
+	NSPasteboard* board = [NSPasteboard generalPasteboard];
+	NSString* str = [board stringForType:NSPasteboardTypeString];
+	if (str == nil)
+	{
+		buffer = "";
+		return buffer.c_str();
+	}
+	const char* utf8 = [str UTF8String];
+	buffer = utf8 ? utf8 : "";
+	return buffer.c_str();
 }
 

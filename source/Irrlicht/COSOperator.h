@@ -27,11 +27,11 @@ public:
 	virtual const core::stringc& getOperatingSystemVersion() const;
 
 	//! copies text to the clipboard
-	virtual void copyToClipboard(const c16* text) const;
+	virtual void copyToClipboard(const c8* text) const;
 
 	//! gets text from the clipboard
 	//! \return Returns 0 if no string is in there.
-	virtual const c16* getTextFromClipboard() const;
+	virtual const c8* getTextFromClipboard() const;
 
 	//! gets the processor speed in megahertz
 	//! \param Mhz:
@@ -47,6 +47,9 @@ public:
 private:
 
 	core::stringc OperatingSystem;
+#ifdef _IRR_WINDOWS_API_
+	mutable core::stringc ClipboardBuffer;
+#endif
 
 #if defined(_IRR_COMPILE_WITH_X11_DEVICE_)
     CIrrDeviceLinux * IrrDeviceLinux;

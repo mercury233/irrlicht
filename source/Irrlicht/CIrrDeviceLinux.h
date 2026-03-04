@@ -138,6 +138,12 @@ namespace irr
 		}
 
 #ifdef _IRR_COMPILE_WITH_X11_
+		//! Update the XIM preedit spot location (pixel position of the text cursor).
+		//! Call this whenever the text cursor moves so the IME candidate window
+		//! (IBus, fcitx, etc.) follows the insertion point.
+		//! Coordinates are relative to the Irrlicht window.
+		void updateXIMPosition(int x, int y);
+
 		// convert an Irrlicht texture to a X11 cursor
 		Cursor TextureToCursor(irr::video::ITexture * tex, const core::rect<s32>& sourceRect, const core::position2d<s32> &hotspot);
 		Cursor TextureToMonochromeCursor(irr::video::ITexture * tex, const core::rect<s32>& sourceRect, const core::position2d<s32> &hotspot);
@@ -452,6 +458,7 @@ namespace irr
 		XImage* SoftwareImage;
 		XIM XInputMethod;
 		XIC XInputContext;
+		XFontSet XInputFontSet;
 		bool HasNetWM;
 		mutable core::stringc Clipboard;
 		#ifdef _IRR_LINUX_X11_VIDMODE_

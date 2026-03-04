@@ -14,6 +14,8 @@
 #include "IEventReceiver.h"
 #include "ISceneManager.h"
 #include "IGUIEnvironment.h"
+#include "IGUIElement.h"
+#include "EGUIElementTypes.h"
 #include "os.h"
 #include "CTimer.h"
 #include "irrString.h"
@@ -92,7 +94,7 @@ CIrrDeviceLinux::CIrrDeviceLinux(const SIrrlichtCreationParameters& param)
 	: CIrrDeviceStub(param),
 #ifdef _IRR_COMPILE_WITH_X11_
 	XDisplay(0), VisualInfo(0), Screennr(0), XWindow(0), StdHints(0), SoftwareImage(0),
-	XInputMethod(0), XInputContext(0),
+	XInputMethod(0), XInputContext(0), XInputFontSet(0),
 	HasNetWM(false),
 #ifdef _IRR_COMPILE_WITH_OPENGL_
 	GlxWin(0),
@@ -672,28 +674,83 @@ bool CIrrDeviceLinux::createInputContext()
 		return false;
 	}
 
+	// XSetLocaleModifiers("") reads XMODIFIERS from the environment (e.g. @im=ibus).
+	// This must be called before XOpenIM so that the correct input method (IBus, fcitx, etc.)
+	// is connected. Without this call, XOpenIM always opens a null/fallback IM regardless
+	// of what XMODIFIERS is set to.
+	if ( !XSetLocaleModifiers("") )
+	{
+		os::Printer::log("XSetLocaleModifiers failed. Input method may not work correctly.", ELL_WARNING);
+		// Don't return - try to carry on without it; worst case we get basic input.
+	}
+
 	XInputMethod = XOpenIM(XDisplay, NULL, NULL, NULL);
 	if ( !XInputMethod )
 	{
 		setlocale(LC_CTYPE, oldLocale.c_str());
 		os::Printer::log("XOpenIM failed to create an input method. Falling back to non-i18n input.", ELL_WARNING);
+		os::Printer::log("  For IBus: ensure 'ibus-daemon -drx' is running and XMODIFIERS=@im=ibus is exported.", ELL_WARNING);
 		return false;
 	}
 
-	XIMStyles *im_supported_styles;
-	XGetIMValues(XInputMethod, XNQueryInputStyle, &im_supported_styles, (char*)NULL);
-	XIMStyle bestStyle = 0;
-	// TODO: If we want to support languages like chinese or japanese as well we probably have to work with callbacks here.
-	XIMStyle supportedStyle = XIMPreeditNone | XIMStatusNone;
-    for(int i=0; i < im_supported_styles->count_styles; ++i)
+	XIMStyles *im_supported_styles = 0;
+	char* ximErr = XGetIMValues(XInputMethod, XNQueryInputStyle, &im_supported_styles, (char*)NULL);
+	if ( ximErr || !im_supported_styles || !im_supported_styles->supported_styles || im_supported_styles->count_styles <= 0 )
 	{
-        XIMStyle style = im_supported_styles->supported_styles[i];
-        if ((style & supportedStyle) == style) /* if we can handle it */
+		os::Printer::log("XGetIMValues(XNQueryInputStyle) failed. Falling back to non-i18n input.", ELL_WARNING);
+		if (im_supported_styles)
+			XFree(im_supported_styles);
+		XCloseIM(XInputMethod);
+		XInputMethod = 0;
+		setlocale(LC_CTYPE, oldLocale.c_str());
+		return false;
+	}
+
+	// Select the best input style by checking preedit and status flags independently.
+	// IBus pairs XIMPreeditPosition with XIMStatusCallbacks/XIMStatusNothing,
+	// and XIMPreeditNothing with XIMStatusNothing. We must not hard-code the status part.
+	//
+	// Priority of preedit styles (highest first):
+	//   XIMPreeditPosition  - candidate window follows cursor; best for CJK over XIM (ibus, fcitx)
+	//   XIMPreeditNothing   - IM draws its own floating window; acceptable fallback
+	//   XIMPreeditNone      - no preedit at all; last resort
+	//
+	// For status we prefer Nothing/None and tolerate Callbacks.
+
+	// Preedit preference order
+	const XIMStyle preeditPref[] = {
+		XIMPreeditPosition,
+		XIMPreeditNothing,
+		XIMPreeditNone,
+		0
+	};
+	// Status preference order
+	const XIMStyle statusPref[] = {
+		XIMStatusNothing,
+		XIMStatusNone,
+		XIMStatusCallbacks,
+		XIMStatusArea,
+		0
+	};
+
+	// Pick the highest-priority (preedit, status) combination that the IM supports
+	XIMStyle bestStyle = 0;
+	for (int pi = 0; preeditPref[pi] != 0 && !bestStyle; ++pi)
+	{
+		for (int si = 0; statusPref[si] != 0 && !bestStyle; ++si)
 		{
-            bestStyle = style;
-			break;
+			XIMStyle candidate = preeditPref[pi] | statusPref[si];
+			for (int i = 0; i < im_supported_styles->count_styles; ++i)
+			{
+				if (im_supported_styles->supported_styles[i] == candidate)
+				{
+					bestStyle = candidate;
+					break;
+				}
+			}
 		}
-    }
+	}
+
 	XFree(im_supported_styles);
 
 	if ( !bestStyle )
@@ -705,10 +762,80 @@ bool CIrrDeviceLinux::createInputContext()
 		return false;
 	}
 
-	XInputContext = XCreateIC(XInputMethod,
-							XNInputStyle, bestStyle,
-							XNClientWindow, XWindow,
-							(char*)NULL);
+	os::Printer::log("XIM input style selected", core::stringc((int)bestStyle).c_str(), ELL_DEBUG);
+
+	if (bestStyle & XIMPreeditPosition)
+	{
+		// Set up preedit attributes with initial spot location and font set.
+		// XIMPreeditPosition tells the IM (IBus/fcitx) to show the candidate window
+		// at the application's text cursor position, giving proper "on-the-spot" style.
+		XPoint spot = {0, 0};
+
+		char **missingList = NULL;
+		int missingCount = 0;
+		char *defaultString = NULL;
+		XInputFontSet = XCreateFontSet(XDisplay,
+			"-*-*-medium-r-normal--14-*-*-*-*-*-*-*,-*-*-*-*-*-*-14-*-*-*-*-*-*-*",
+			&missingList, &missingCount, &defaultString);
+		if (missingList)
+			XFreeStringList(missingList);
+
+		XVaNestedList preeditAttr;
+		if (XInputFontSet)
+		{
+			preeditAttr = XVaCreateNestedList(0,
+				XNSpotLocation, &spot,
+				XNFontSet, XInputFontSet,
+				(char*)NULL);
+		}
+		else
+		{
+			os::Printer::log("Failed to create XFontSet for preedit, trying without it.", ELL_WARNING);
+			preeditAttr = XVaCreateNestedList(0,
+				XNSpotLocation, &spot,
+				(char*)NULL);
+		}
+
+		XInputContext = XCreateIC(XInputMethod,
+			XNInputStyle, bestStyle,
+			XNClientWindow, XWindow,
+			XNFocusWindow, XWindow,
+			XNPreeditAttributes, preeditAttr,
+			(char*)NULL);
+
+		XFree(preeditAttr);
+
+		// XIMPreeditPosition creation failed; fall back to any XIMPreeditNothing style
+		if (!XInputContext)
+		{
+			os::Printer::log("XIMPreeditPosition failed, falling back to PreeditNothing/PreeditNone.", ELL_WARNING);
+			// Try XIMPreeditNothing variants first, then XIMPreeditNone
+			const XIMStyle fallbackPreedit[] = { XIMPreeditNothing, XIMPreeditNone, 0 };
+			for (int pi = 0; fallbackPreedit[pi] != 0 && !XInputContext; ++pi)
+			{
+				for (int si = 0; statusPref[si] != 0 && !XInputContext; ++si)
+				{
+					XIMStyle fallback = fallbackPreedit[pi] | statusPref[si];
+					XInputContext = XCreateIC(XInputMethod,
+						XNInputStyle, fallback,
+						XNClientWindow, XWindow,
+						XNFocusWindow, XWindow,
+						(char*)NULL);
+					if (XInputContext)
+						os::Printer::log("Fallback XIM style used", core::stringc((int)fallback).c_str(), ELL_DEBUG);
+				}
+			}
+		}
+	}
+	else if (!XInputContext)
+	{
+		XInputContext = XCreateIC(XInputMethod,
+			XNInputStyle, bestStyle,
+			XNClientWindow, XWindow,
+			XNFocusWindow, XWindow,
+			(char*)NULL);
+	}
+
 	if (!XInputContext )
 	{
 		os::Printer::log("XInputContext failed to create an input context. Falling back to non-i18n input.", ELL_WARNING);
@@ -730,11 +857,37 @@ void CIrrDeviceLinux::destroyInputContext()
 		XDestroyIC(XInputContext);
 		XInputContext = 0;
 	}
+	// Bug1 fix: free the font set only after the IC is destroyed.
+	if ( XInputFontSet )
+	{
+		XFreeFontSet(XDisplay, XInputFontSet);
+		XInputFontSet = 0;
+	}
 	if ( XInputMethod )
 	{
 		XCloseIM(XInputMethod);
 		XInputMethod = 0;
 	}
+}
+
+void CIrrDeviceLinux::updateXIMPosition(int x, int y)
+{
+	if ( !XInputContext )
+		return;
+
+	XPoint spot;
+	spot.x = (short)x;
+	spot.y = (short)y;
+
+	XVaNestedList preeditAttr = XVaCreateNestedList(0,
+		XNSpotLocation, &spot,
+		(char*)NULL);
+
+	XSetICValues(XInputContext,
+		XNPreeditAttributes, preeditAttr,
+		(char*)NULL);
+
+	XFree(preeditAttr);
 }
 
 EKEY_CODE CIrrDeviceLinux::getKeyCode(XEvent &event)
@@ -795,6 +948,18 @@ bool CIrrDeviceLinux::run()
 			XEvent event;
 			XNextEvent(XDisplay, &event);
 
+			// When an edit-box has GUI focus, let XIM process the event first.
+			// Calling XFilterEvent unconditionally would let the IM swallow game-control
+			// keypresses (e.g. WASD / arrow keys) even when no text input is expected.
+			{
+				irr::gui::IGUIElement* focusEle = getGUIEnvironment() ? getGUIEnvironment()->getFocus() : 0;
+				bool textInputFocused = focusEle
+					&& focusEle->getType() == irr::gui::EGUIET_EDIT_BOX
+					&& focusEle->isEnabled();
+				if (textInputFocused && XInputContext && XFilterEvent(&event, None))
+					continue;
+			}
+
 			switch (event.type)
 			{
 			case ConfigureNotify:
@@ -835,10 +1000,14 @@ bool CIrrDeviceLinux::run()
 
 			case FocusIn:
 				WindowHasFocus=true;
+				if (XInputContext)
+					XSetICFocus(XInputContext);
 				break;
 
 			case FocusOut:
 				WindowHasFocus=false;
+				if (XInputContext)
+					XUnsetICFocus(XInputContext);
 				break;
 
 			case MotionNotify:
@@ -915,6 +1084,11 @@ bool CIrrDeviceLinux::run()
 
 				if (irrevent.MouseInput.Event != irr::EMIE_COUNT)
 				{
+					// Update XIM preedit spot so the IME candidate window appears
+					// near where the user clicked (best approximation without GUI layer access).
+					if (event.type == ButtonPress)
+						updateXIMPosition(event.xbutton.x, event.xbutton.y);
+
 					postEventFromUser(irrevent);
 
 					if ( irrevent.MouseInput.Event >= EMIE_LMOUSE_PRESSED_DOWN && irrevent.MouseInput.Event <= EMIE_MMOUSE_PRESSED_DOWN )
@@ -970,36 +1144,46 @@ bool CIrrDeviceLinux::run()
 			case KeyPress:
 				{
 					SKeyMap mp;
+					int ximChars = 0;  // number of characters committed by IME (may be > 1 for CJK)
+					bool ximIsImeCommit = false; // true when XIM returned only chars (no keysym) → IME commit
+					wchar_t ximBuf[32] = {0};
+					wchar_t* dynXimBuf = nullptr;   // heap buffer allocated on XBufferOverflow; freed at end of case
+					wchar_t* charsToPost = ximBuf;  // points to ximBuf normally, or dynXimBuf on overflow
+
 					if ( XInputContext )
 					{
-						wchar_t buf[8]={0};
 						Status status;
-						int strLen = XwcLookupString(XInputContext, &event.xkey, buf, sizeof(buf), &mp.X11Key, &status);
+						int strLen = XwcLookupString(XInputContext, &event.xkey,
+							ximBuf, (int)(sizeof(ximBuf)/sizeof(ximBuf[0])) - 1,
+							&mp.X11Key, &status);
 						if ( status == XBufferOverflow )
 						{
-							os::Printer::log("XwcLookupString needs a larger buffer", ELL_INFORMATION);
+							os::Printer::log("XwcLookupString needs a larger buffer, retrying", ELL_INFORMATION);
+							dynXimBuf = new wchar_t[strLen + 1];
+							int dynLen = XwcLookupString(XInputContext, &event.xkey,
+								dynXimBuf, strLen + 1, &mp.X11Key, &status);
+							if ( dynLen > 0 && (status == XLookupChars || status == XLookupBoth) )
+							{
+								dynXimBuf[dynLen] = 0;
+								strLen = dynLen;
+								charsToPost = dynXimBuf;
+							}
+							else
+							{
+								strLen = 0;
+							}
 						}
 						if ( strLen > 0 && (status == XLookupChars || status == XLookupBoth) )
 						{
-							if ( strLen > 1 )
-								os::Printer::log("Additional returned characters dropped", ELL_INFORMATION);
-							irrevent.KeyInput.Char = buf[0];
+							ximChars = strLen;
+							// XLookupChars means the IM returned only characters with no keysym.
+							// This is the typical IME commit path (e.g. CJK composition confirmed).
+							// XLookupBoth means a regular key press that also produced a character.
+							ximIsImeCommit = (status == XLookupChars);
 						}
 						else
 						{
-#if 0 // Most of those are fine - but useful to have the info when debugging Irrlicht itself.
-							if ( status == XLookupNone )
-								os::Printer::log("XLookupNone", ELL_INFORMATION);
-							else if ( status ==  XLookupKeySym )
-								// Getting this also when user did not set setlocale(LC_ALL, ""); and using an unknown locale
-								// XSupportsLocale doesn't seem to catch that unfortunately - any other ideas to catch it are welcome.
-								os::Printer::log("XLookupKeySym", ELL_INFORMATION);
-							else if ( status ==  XBufferOverflow )
-								os::Printer::log("XBufferOverflow", ELL_INFORMATION);
-							else if ( strLen == 0 )
-								os::Printer::log("no string", ELL_INFORMATION);
-#endif
-							irrevent.KeyInput.Char = 0;
+							charsToPost[0] = 0;
 						}
 					}
 					else	// Old version without InputContext. Does not support i18n, but good to have as fallback.
@@ -1010,18 +1194,51 @@ bool CIrrDeviceLinux::run()
 							wchar_t wbuf[2];
 						} tmp = {{0}};
 						XLookupString(&event.xkey, tmp.buf, sizeof(tmp.buf), &mp.X11Key, NULL);
-						irrevent.KeyInput.Char = tmp.wbuf[0];
+						ximBuf[0] = tmp.wbuf[0];
+						ximChars = ximBuf[0] ? 1 : 0;
 					}
 
 					irrevent.EventType = irr::EET_KEY_INPUT_EVENT;
 					irrevent.KeyInput.PressedDown = true;
 					irrevent.KeyInput.Control = (event.xkey.state & ControlMask) != 0;
 					irrevent.KeyInput.Shift = (event.xkey.state & ShiftMask) != 0;
-					irrevent.KeyInput.Key = getKeyCode(event);
 					irrevent.KeyInput.AutoRepeat = false;
 					irrevent.KeyInput.Extended = false;
 
-					postEventFromUser(irrevent);
+					if ( ximChars > 0 )
+					{
+						// Send one EET_KEY_INPUT_EVENT per committed character.
+						// For IME commits (XLookupChars - no keysym) use KEY_ACCEPT on every char,
+						// consistent with Windows WM_IME_COMPOSITION and macOS handleInputEvent.
+						// For regular key presses (XLookupBoth - has keysym) the first char carries
+						// the real physical key code; subsequent chars (shouldn't happen, but guard
+						// anyway) get KEY_ACCEPT since they have no single-key correspondence.
+						for ( int ci = 0; ci < ximChars; ++ci )
+						{
+							irrevent.KeyInput.Char = charsToPost[ci];
+							irrevent.KeyInput.Key  = (ximIsImeCommit || ci > 0)
+								? irr::KEY_ACCEPT
+								: getKeyCode(event);
+							irrevent.KeyInput.PressedDown = true;
+							postEventFromUser(irrevent);
+							// IME commits have no matching KeyRelease X event for the committed
+							// character; synthesise the key-up immediately so consumers see a
+							// complete down/up pair (same fix applied on Windows and macOS).
+							if ( ximIsImeCommit )
+							{
+								irrevent.KeyInput.PressedDown = false;
+								postEventFromUser(irrevent);
+							}
+						}
+					}
+					else
+					{
+						// No character output (e.g. dead key, modifier-only, or preedit in progress)
+						irrevent.KeyInput.Char = 0;
+						irrevent.KeyInput.Key  = getKeyCode(event);
+						postEventFromUser(irrevent);
+					}
+					delete[] dynXimBuf;
 				}
 				break;
 

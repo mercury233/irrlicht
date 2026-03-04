@@ -18,6 +18,7 @@
 
 #import <AppKit/NSWindow.h>
 #import <AppKit/NSBitmapImageRep.h>
+#import <AppKit/NSTextView.h>
 
 #include <map>
 
@@ -109,6 +110,11 @@ namespace irr
 		void setResize(int width, int height);
 		void setCursorVisible(bool visible);
         void setWindow(NSWindow* window);
+        NSWindow* getWindow() const;
+
+		void handleInputEvent(const char* str);
+		void processKeyEvent();
+		void reactivateIME();
 
 	private:
 
@@ -254,6 +260,7 @@ namespace irr
 		bool IsShiftDown;
 		bool IsControlDown;
 		bool IsResizable;
+		NSTextView* TextInputView;
 	};
 
 

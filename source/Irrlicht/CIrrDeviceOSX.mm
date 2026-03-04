@@ -10,9 +10,7 @@
 
 #import <Cocoa/Cocoa.h>
 #import <OpenGL/gl.h>
-#ifndef __MAC_10_6
 #import <Carbon/Carbon.h>
-#endif
 
 #include "CIrrDeviceOSX.h"
 
@@ -303,7 +301,7 @@ static void getJoystickDeviceInfo (io_object_t hidDevice, CFMutableDictionaryRef
 #endif // _IRR_COMPILE_WITH_JOYSTICK_EVENTS_
 
 // only OSX 10.5 seems to not need these defines...
-#if !defined(__MAC_10_5) || defined(__MAC_10_6)
+#if !defined(__MAC_10_5)
 // Contents from Events.h from Carbon/HIToolbox but we need it with Cocoa too
 // and for some reason no Cocoa equivalent of these constants seems provided.
 // So I'm doing like everyone else and using copy-and-paste.
@@ -1431,7 +1429,6 @@ void CIrrDeviceMacOSX::initKeycodes()
 	KeyCodes[kVK_ANSI_U] = irr::KEY_KEY_U;
 	KeyCodes[kVK_ANSI_V] = irr::KEY_KEY_V;
 	KeyCodes[kVK_ANSI_W] = irr::KEY_KEY_W;
-	KeyCodes[kVK_ANSI_X] = irr::KEY_KEY_X;
 	KeyCodes[kVK_ANSI_X] = irr::KEY_KEY_X;
 	KeyCodes[kVK_ANSI_Y] = irr::KEY_KEY_Y;
 	KeyCodes[kVK_ANSI_Z] = irr::KEY_KEY_Z;

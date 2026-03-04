@@ -20,7 +20,14 @@
 #include "COSOperator.h"
 #include "dimension2d.h"
 #include "IGUISpriteBank.h"
+#include "IGUIEnvironment.h"
+#include "IGUIElement.h"
+#include "EGUIElementTypes.h"
 #include <winuser.h>
+#include <imm.h>
+#ifdef _MSC_VER
+#pragma comment(lib, "imm32.lib")
+#endif
 #if defined(_IRR_COMPILE_WITH_JOYSTICK_EVENTS_)
 #include <mmsystem.h>
 #include <regstr.h>
@@ -524,9 +531,15 @@ namespace
 	{
 		HWND hWnd;
 		irr::CIrrDeviceWin32* irrDev;
+		bool imeEnabled;
+		bool imeComposing;
 	};
 	// NOTE: This is global. We can have more than one Irrlicht Device at same time.
 	irr::core::array<SEnvMapper> EnvMap;
+
+	// Tracks the active keyboard layout so ToUnicodeEx uses the correct HKL
+	// even when the input language is switched mid-session.
+	HKL KEYBOARD_INPUT_HKL = 0;
 }
 
 irr::CIrrDeviceWin32* getDeviceFromHWnd(HWND hWnd)
@@ -537,6 +550,18 @@ irr::CIrrDeviceWin32* getDeviceFromHWnd(HWND hWnd)
 		const SEnvMapper& env = EnvMap[i];
 		if ( env.hWnd == hWnd )
 			return env.irrDev;
+	}
+
+	return 0;
+}
+
+SEnvMapper* getEnvMapperFromHWnd(HWND hWnd)
+{
+	const irr::u32 end = EnvMap.size();
+	for ( irr::u32 i=0; i < end; ++i )
+	{
+		if ( EnvMap[i].hWnd == hWnd )
+			return &EnvMap[i];
 	}
 
 	return 0;
@@ -559,6 +584,41 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	static irr::s32 ClickCount=0;
 	if (GetCapture() != hWnd && ClickCount > 0)
 		ClickCount = 0;
+
+	// IME enable/disable: only re-check when messages that can change GUI focus state arrive.
+	// Skipping WM_PAINT, WM_MOUSEMOVE etc. avoids calling getFocus() on every message.
+	const bool couldChangeFocus = (message == WM_SETFOCUS || message == WM_KILLFOCUS ||
+		message == WM_LBUTTONDOWN || message == WM_RBUTTONDOWN || message == WM_MBUTTONDOWN ||
+		message == WM_KEYDOWN || message == WM_KEYUP ||
+		message == WM_SYSKEYDOWN || message == WM_SYSKEYUP);
+	SEnvMapper* envMapper = getEnvMapperFromHWnd(hWnd);
+	if (couldChangeFocus && envMapper && envMapper->irrDev)
+	{
+		dev = envMapper->irrDev;
+		irr::gui::IGUIEnvironment* guienv = dev->getGUIEnvironment();
+		irr::gui::IGUIElement* ele = guienv ? guienv->getFocus() : 0;
+		bool enable = (ele && ele->getType() == irr::gui::EGUIET_EDIT_BOX && ele->isEnabled());
+
+		if (enable != envMapper->imeEnabled)
+		{
+			if (!enable)
+			{
+				HIMC hIMC = ImmGetContext(hWnd);
+				if (hIMC)
+				{
+					ImmNotifyIME(hIMC, NI_COMPOSITIONSTR, CPS_CANCEL, 0);
+					ImmReleaseContext(hWnd, hIMC);
+				}
+				ImmAssociateContextEx(hWnd, NULL, 0);
+				envMapper->imeComposing = false;
+			}
+			else
+				ImmAssociateContextEx(hWnd, NULL, IACE_DEFAULT);
+
+			envMapper->imeEnabled = enable;
+		}
+		dev = 0;	// reset; will be looked up again per-case below
+	}
 
 
 	struct messageMap
@@ -707,6 +767,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			GetKeyboardState(allKeys);
 
+			// Ensure the state of the triggering key itself is up-to-date.
+			// GetKeyboardState can lag one message behind, so patch it manually.
+			if (wParam < 256)
+			{
+				if (event.KeyInput.PressedDown)
+					allKeys[wParam] |= 0x80;
+				else
+					allKeys[wParam] &= ~0x80;
+			}
+
 			event.KeyInput.Shift = ((allKeys[VK_SHIFT] & 0x80)!=0);
 			event.KeyInput.Control = ((allKeys[VK_CONTROL] & 0x80)!=0);
 
@@ -715,22 +785,34 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			bool wasKeyDown = (keyFlags & KF_REPEAT) == KF_REPEAT;
 			event.KeyInput.AutoRepeat = event.KeyInput.PressedDown && wasKeyDown;
 
-			// Handle unicode and deadkeys in a way that works since Windows 95 and nt4.0
-			// Using ToUnicode instead would be shorter, but would to my knowledge not run on 95 and 98.
-			WORD scanCode = LOBYTE(keyFlags);
+			UINT scanCode = LOBYTE(keyFlags);
 			//if (event.KeyInput.Extended)	// MSDN had this code to modify scanCode further
 			//	scanCode = MAKEWORD(scanCode, 0xE0); // But this broke ToUnicode p.E. for num-lock '/' key.
-			WCHAR keyChars[6];	// utf-16 code units. We only use first one for now, but let's get more so if there's trouble some day it's easier to debug.
-			UINT wFlags = 1; // we do not support typing alt+number to get a character
-			int unitsWritten = ToUnicode((UINT)wParam, scanCode, allKeys, keyChars, 6, wFlags);
+			WCHAR keyChars[6];	// buffer for ToUnicodeEx; only keyChars[0] is used.
+			// wFlags bit 0 set means "menu is active"; this suppresses certain
+			// menu-accelerator translations and is intentionally set here so that
+			// Alt+key combinations produce 0 instead of a character.
+			UINT wFlags = 1;
+			HKL hkl = KEYBOARD_INPUT_HKL ? KEYBOARD_INPUT_HKL : GetKeyboardLayout(0);
+			int unitsWritten = ToUnicodeEx((UINT)wParam, scanCode, allKeys, keyChars, 6, wFlags, hkl);
 			if ( unitsWritten > 0 )
 			{
+				// TODO: UNICODE-LIMITATION: wchar_t on Windows is 16-bit (UTF-16 code unit).
+				// If ToUnicodeEx returns a surrogate pair (for non-BMP characters like U+20000+),
+				// only the first surrogate is used here; the second surrogate is discarded.
+				// Non-BMP Unicode characters (second plane and above CJK extensions, some Emoji, etc.)
+				// are currently NOT supported.
 				event.KeyInput.Char = keyChars[0];
 			}
 			else
 			{
-				// unitsWritten < 0 means it's a dead-key (accent or diacritic)
-				// 0 means ther is no translation for current state
+				// unitsWritten < 0: dead key (accent/diacritic).
+				//   The Windows keyboard layout has stored the dead-key in its internal
+				//   state machine so that the *next* keypress can combine to form the
+				//   accented character (e.g. ^ + e → ê, ` + a → à).
+				//   Do NOT call ToUnicodeEx again here – doing so would consume that
+				//   stored state and break the composition entirely.
+				// unitsWritten == 0: no translation for current state
 				event.KeyInput.Char = 0;
 			}
 
@@ -740,13 +822,33 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			dev = getDeviceFromHWnd(hWnd);
 			if (dev)
-				dev->postEventFromUser(event);
+			{
+				// During IME composition the raw alphabetic characters typed by the user
+				// (e.g. pinyin letters) should NOT reach the edit box – only the
+				// final character from WM_IME_COMPOSITION should go through.
+				SEnvMapper* envMapper2 = getEnvMapperFromHWnd(hWnd);
+				const bool imeComposing = envMapper2 && envMapper2->imeComposing;
+				if (!imeComposing)
+					dev->postEventFromUser(event);
+			}
 
 			if (message == WM_SYSKEYDOWN || message == WM_SYSKEYUP)
 				return DefWindowProc(hWnd, message, wParam, lParam);
 			else
 				return 0;
 		}
+
+	case WM_KILLFOCUS:
+		{
+			// If the window loses focus while an IME composition is in progress,
+			// the WM_IME_ENDCOMPOSITION message may never arrive (e.g. when the
+			// IME is forcibly dismissed). Reset the flag here as a safety net so
+			// keyboard input is never permanently silenced.
+			SEnvMapper* envKF = getEnvMapperFromHWnd(hWnd);
+			if (envKF)
+				envKF->imeComposing = false;
+		}
+		break;
 
 	case WM_SIZE:
 		{
@@ -814,6 +916,102 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			dev->getCursorControl()->setVisible( dev->getCursorControl()->isVisible() );
 		}
 		break;
+
+	case WM_INPUTLANGCHANGE:
+		// lParam carries the new HKL; store it so ToUnicodeEx always uses the
+		// correct keyboard layout even across rapid input-language switches.
+		KEYBOARD_INPUT_HKL = (HKL)lParam;
+		// Allow DefWindowProc to complete language switch processing for TSF/IME internals.
+		return DefWindowProc(hWnd, message, wParam, lParam);
+
+	case WM_IME_COMPOSITION:
+		{
+			if (lParam & GCS_RESULTSTR)
+			{
+				dev = getDeviceFromHWnd(hWnd);
+				if (dev)
+				{
+					HIMC hIMC = ImmGetContext(hWnd);
+					if (hIMC)
+					{
+						LONG bytes = ImmGetCompositionStringW(hIMC, GCS_RESULTSTR, NULL, 0);
+						if (bytes > 0)
+						{
+							const int wcharCount = bytes / (int)sizeof(WCHAR);
+							WCHAR* buffer = new WCHAR[wcharCount + 1];
+							ImmGetCompositionStringW(hIMC, GCS_RESULTSTR, buffer, bytes);
+							buffer[wcharCount] = 0;
+
+							event.EventType = irr::EET_KEY_INPUT_EVENT;
+							event.KeyInput.PressedDown = true;
+							event.KeyInput.Key = irr::KEY_ACCEPT; // IME confirmed character; KEY_ACCEPT distinguishes it from normal key events
+							event.KeyInput.Shift = 0;
+							event.KeyInput.Control = 0;
+							event.KeyInput.AutoRepeat = false;
+							event.KeyInput.Extended = false;
+
+							// TODO: UNICODE-LIMITATION: Each buffer[i] is a WCHAR (16-bit UTF-16 code unit).
+							// If the IME commits a non-BMP character (U+20000+), it comes as a surrogate pair.
+							// This loop will POST two separate KEY_ACCEPT events for the two surrogates,
+							// rather than one complete character. This is NOT correct for non-BMP Uni characters.
+							// Non-BMP Unicode characters (second plane and above CJK extensions, some Emoji, etc.)
+							// are currently NOT supported.
+							for (int i = 0; i < wcharCount; ++i)
+							{
+								event.KeyInput.Char = buffer[i];
+								event.KeyInput.PressedDown = true;
+								dev->postEventFromUser(event);
+								// IME commits have no WM_KEYUP; generate the matching
+								// key-up immediately so consumers see a complete down/up pair.
+								event.KeyInput.PressedDown = false;
+								dev->postEventFromUser(event);
+							}
+
+							delete[] buffer;
+							lParam &= ~GCS_RESULTSTR;
+						}
+						ImmReleaseContext(hWnd, hIMC);
+					}
+				}
+			}
+			if (lParam == 0)
+				return 0;
+			break;
+		}
+
+	case WM_IME_STARTCOMPOSITION:
+		{
+			SEnvMapper* envMapper3 = getEnvMapperFromHWnd(hWnd);
+			if (envMapper3)
+				envMapper3->imeComposing = true;
+
+			dev = getDeviceFromHWnd(hWnd);
+			if (!dev) break;
+			irr::gui::IGUIElement* ele = dev->getGUIEnvironment() ? dev->getGUIEnvironment()->getFocus() : 0;
+			if (!ele) break;
+			irr::core::position2di pos = ele->getAbsolutePosition().UpperLeftCorner;
+			COMPOSITIONFORM CompForm = { CFS_POINT, { pos.X, pos.Y + ele->getAbsolutePosition().getHeight() } };
+			HIMC hIMC = ImmGetContext(hWnd);
+			if (hIMC)
+			{
+				ImmSetCompositionWindow(hIMC, &CompForm);
+				ImmReleaseContext(hWnd, hIMC);
+			}
+		}
+		break;
+
+	case WM_IME_ENDCOMPOSITION:
+		{
+			SEnvMapper* envMapper4 = getEnvMapperFromHWnd(hWnd);
+			if (envMapper4)
+				envMapper4->imeComposing = false;
+		}
+		break;
+
+	case WM_IME_CHAR:
+		// Characters are already delivered via WM_IME_COMPOSITION (GCS_RESULTSTR).
+		// Swallow this message to prevent double-posting.
+		return 0;
 	}
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
@@ -954,7 +1152,13 @@ CIrrDeviceWin32::CIrrDeviceWin32(const SIrrlichtCreationParameters& params)
 	SEnvMapper em;
 	em.irrDev = this;
 	em.hWnd = HWnd;
+	em.imeEnabled = false;
+	em.imeComposing = false;
 	EnvMap.push_back(em);
+
+	// Disable IME initially; it will be enabled when an edit box gains focus.
+	if (HWnd)
+		ImmAssociateContextEx(HWnd, NULL, 0);
 
 	// set this as active window
 	if (!ExternalWindow)
@@ -1747,8 +1951,13 @@ void CIrrDeviceWin32::handleSystemMessages()
 		}
 		else
 		{
-			// No message translation because we don't use WM_CHAR and it would conflict with our
-			// deadkey handling.
+			// Call TranslateMessage when IME is active so that TSF-based IMEs (Windows 10+
+			// Pinyin/Bopomofo etc.) can intercept keystrokes and generate WM_IME_COMPOSITION.
+			// We only do this when the edit-box focus flag is set to avoid interfering with
+			// the dead-key handling used for normal (non-IME) input.
+			SEnvMapper* envMapper = getEnvMapperFromHWnd(msg.hwnd);
+			if (envMapper && envMapper->imeEnabled)
+				TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
 

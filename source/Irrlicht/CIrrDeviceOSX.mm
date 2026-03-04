@@ -88,6 +88,7 @@ struct JoystickInfo
 		buttonComp.clear();
 		hatComp.clear();
 
+		memset(&persistentData, 0, sizeof(persistentData));
 		persistentData.EventType = irr::EET_JOYSTICK_INPUT_EVENT;
 		persistentData.JoystickEvent.POV = 65535;
 		persistentData.JoystickEvent.ButtonStates = 0;
@@ -843,6 +844,7 @@ void CIrrDeviceMacOSX::setResize(int width, int height)
 
 		//SceneManager ( Camera ) should react with reset, otherwise sticky mouse
 		irr::SEvent	ievent;
+		memset(&ievent, 0, sizeof(ievent));
 		ievent.EventType = irr::EET_MOUSE_INPUT_EVENT;
 		MouseButtonStates &= ~irr::EMBSM_LEFT;
 		ievent.MouseInput.ButtonStates = MouseButtonStates;
@@ -947,6 +949,7 @@ bool CIrrDeviceMacOSX::run()
 
 	NSEvent *event;
 	irr::SEvent	ievent;
+	memset(&ievent, 0, sizeof(ievent));
 
 	os::Timer::tick();
 	storeMouseLocation();
@@ -970,6 +973,8 @@ bool CIrrDeviceMacOSX::run()
 				ievent.EventType = irr::EET_KEY_INPUT_EVENT;
 				ievent.KeyInput.Shift = ([(NSEvent *)event modifierFlags] & NSShiftKeyMask) != 0;
 				ievent.KeyInput.Control = ([(NSEvent *)event modifierFlags] & NSControlKeyMask) != 0;
+				ievent.KeyInput.AutoRepeat = false;
+				ievent.KeyInput.Extended = false;
 
 				if (IsShiftDown != ievent.KeyInput.Shift)
 				{
@@ -1218,6 +1223,8 @@ void CIrrDeviceMacOSX::postKeyEvent(void *event,irr::SEvent &ievent,bool pressed
 		ievent.KeyInput.Shift = ([(NSEvent *)event modifierFlags] & NSShiftKeyMask) != 0;
 		ievent.KeyInput.Control = ([(NSEvent *)event modifierFlags] & NSControlKeyMask) != 0;
 		ievent.KeyInput.Char = mchar;
+		ievent.KeyInput.AutoRepeat = false;
+		ievent.KeyInput.Extended = false;
 
 		if (skipCommand)
 			ievent.KeyInput.Control = true;
@@ -1292,6 +1299,7 @@ void CIrrDeviceMacOSX::storeMouseLocation()
 		{
 			// In fullscreen mode, events are not sent regularly so rely on polling
 			irr::SEvent ievent;
+			memset(&ievent, 0, sizeof(ievent));
 			ievent.EventType = irr::EET_MOUSE_INPUT_EVENT;
 			ievent.MouseInput.Event = irr::EMIE_MOUSE_MOVED;
 			ievent.MouseInput.X = x;

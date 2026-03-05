@@ -536,10 +536,6 @@ namespace
 	};
 	// NOTE: This is global. We can have more than one Irrlicht Device at same time.
 	irr::core::array<SEnvMapper> EnvMap;
-
-	// Tracks the active keyboard layout so ToUnicodeEx uses the correct HKL
-	// even when the input language is switched mid-session.
-	HKL KEYBOARD_INPUT_HKL = 0;
 }
 
 irr::CIrrDeviceWin32* getDeviceFromHWnd(HWND hWnd)
@@ -785,38 +781,38 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			bool wasKeyDown = (keyFlags & KF_REPEAT) == KF_REPEAT;
 			event.KeyInput.AutoRepeat = event.KeyInput.PressedDown && wasKeyDown;
 
-			UINT scanCode = LOBYTE(keyFlags);
-			//if (event.KeyInput.Extended)	// MSDN had this code to modify scanCode further
-			//	scanCode = MAKEWORD(scanCode, 0xE0); // But this broke ToUnicode p.E. for num-lock '/' key.
-			WCHAR keyChars[6];	// buffer for ToUnicodeEx; only keyChars[0] is used.
-			// wFlags bit 0 set means "menu is active"; this suppresses certain
-			// menu-accelerator translations and is intentionally set here so that
-			// Alt+key combinations produce 0 instead of a character.
-			UINT wFlags = 1;
-			HKL hkl = KEYBOARD_INPUT_HKL ? KEYBOARD_INPUT_HKL : GetKeyboardLayout(0);
-			int unitsWritten = ToUnicodeEx((UINT)wParam, scanCode, allKeys, keyChars, 6, wFlags, hkl);
-			if ( unitsWritten > 0 )
+			// Consume the character message posted by TranslateMessage (called before
+			// DispatchMessage in the message loop). Handles regular keys, dead-key
+			// composition (´+e→é), and AltGr without touching the dead-key state buffer.
+			// The dead-key counterparts (WM_DEADCHAR / WM_SYSDEADCHAR) are discarded to
+			// keep the queue clean.
+			const UINT charMsgId     = (message == WM_SYSKEYDOWN) ? WM_SYSCHAR     : WM_CHAR;
+			const UINT deadCharMsgId = (message == WM_SYSKEYDOWN) ? WM_SYSDEADCHAR : WM_DEADCHAR;
+			event.KeyInput.Char = 0;
+			if ( event.KeyInput.PressedDown )
 			{
-				// TODO: UNICODE-LIMITATION: wchar_t on Windows is 16-bit (UTF-16 code unit).
-				// If ToUnicodeEx returns a surrogate pair (for non-BMP characters like U+20000+),
-				// only the first surrogate is used here; the second surrogate is discarded.
-				// Non-BMP Unicode characters (second plane and above CJK extensions, some Emoji, etc.)
-				// are currently NOT supported.
-				event.KeyInput.Char = keyChars[0];
-			}
-			else
-			{
-				// unitsWritten < 0: dead key (accent/diacritic).
-				//   The Windows keyboard layout has stored the dead-key in its internal
-				//   state machine so that the *next* keypress can combine to form the
-				//   accented character (e.g. ^ + e → ê, ` + a → à).
-				//   Do NOT call ToUnicodeEx again here – doing so would consume that
-				//   stored state and break the composition entirely.
-				// unitsWritten == 0: no translation for current state
-				event.KeyInput.Char = 0;
+				MSG charMsg;
+				if (PeekMessage(&charMsg, hWnd, charMsgId, charMsgId, PM_REMOVE))
+				{
+					// TODO: Non-BMP Unicode characters (U+10000 and above) are not handled correctly.
+					// Windows uses UTF-16, where wchar_t represents a single 16-bit code unit rather
+					// than a full Unicode scalar value. Characters outside the Basic Multilingual
+					// Plane (BMP) are encoded as surrogate pairs (two UTF-16 code units).
+					// WM_CHAR messages deliver each surrogate code unit separately. This code treats
+					// each wchar_t as an independent character and therefore fails to combine the
+					// high/low surrogate pair into a single Unicode code point.
+					// Affected characters include many Emoji, CJK extension characters and other
+					// supplementary-plane characters.
+					event.KeyInput.Char = (wchar_t)charMsg.wParam;
+				}
+				else
+				{
+					PeekMessage(&charMsg, hWnd, deadCharMsgId, deadCharMsgId, PM_REMOVE);
+				}
 			}
 
-			// allow composing characters like '@' with Alt Gr on non-US keyboards
+			// AltGr = Left-Ctrl + Right-Alt; clear the spurious Control flag.
+			// 0x80 is the "key is down" flag in the byte output by GetKeyboardState.
 			if ((allKeys[VK_MENU] & 0x80) != 0)
 				event.KeyInput.Control = 0;
 
@@ -918,9 +914,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_INPUTLANGCHANGE:
-		// lParam carries the new HKL; store it so ToUnicodeEx always uses the
-		// correct keyboard layout even across rapid input-language switches.
-		KEYBOARD_INPUT_HKL = (HKL)lParam;
 		// Allow DefWindowProc to complete language switch processing for TSF/IME internals.
 		return DefWindowProc(hWnd, message, wParam, lParam);
 
@@ -950,12 +943,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 							event.KeyInput.AutoRepeat = false;
 							event.KeyInput.Extended = false;
 
-							// TODO: UNICODE-LIMITATION: Each buffer[i] is a WCHAR (16-bit UTF-16 code unit).
-							// If the IME commits a non-BMP character (U+20000+), it comes as a surrogate pair.
-							// This loop will POST two separate KEY_ACCEPT events for the two surrogates,
-							// rather than one complete character. This is NOT correct for non-BMP Uni characters.
-							// Non-BMP Unicode characters (second plane and above CJK extensions, some Emoji, etc.)
-							// are currently NOT supported.
+							// TODO: Non-BMP Unicode characters (U+10000 and above) are not handled correctly.
+							// The IME returns committed text as a UTF-16 sequence. Characters outside the
+							// Basic Multilingual Plane (BMP) are encoded as surrogate pairs (two UTF-16 code
+							// units). This loop processes each wchar_t independently instead of combining
+							// high/low surrogate pairs into a single Unicode code point.
+							// As a result, supplementary-plane characters (e.g., CJK extensions, many Emoji)
+							// are wrongly emitted as two separate events rather than one character.
 							for (int i = 0; i < wcharCount; ++i)
 							{
 								event.KeyInput.Char = buffer[i];
@@ -1937,27 +1931,16 @@ void CIrrDeviceWin32::handleSystemMessages()
 
 	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 	{
+		// Always TranslateMessage first: posts WM_CHAR for dead-key composition
+		// (´+e→é), AltGr chars, and enables CJK IME candidate windows.
+		// WndProc consumes WM_CHAR via PeekMessage instead of calling ToUnicodeEx.
+		TranslateMessage(&msg);
 		if (ExternalWindow && msg.hwnd == HWnd)
 		{
-			if (msg.hwnd == HWnd)
-            {
-				WndProc(HWnd, msg.message, msg.wParam, msg.lParam);
-            }
-            else
-            {
-                TranslateMessage(&msg);
-                DispatchMessage(&msg);
-            }
+			WndProc(HWnd, msg.message, msg.wParam, msg.lParam);
 		}
 		else
 		{
-			// Call TranslateMessage when IME is active so that TSF-based IMEs (Windows 10+
-			// Pinyin/Bopomofo etc.) can intercept keystrokes and generate WM_IME_COMPOSITION.
-			// We only do this when the edit-box focus flag is set to avoid interfering with
-			// the dead-key handling used for normal (non-IME) input.
-			SEnvMapper* envMapper = getEnvMapperFromHWnd(msg.hwnd);
-			if (envMapper && envMapper->imeEnabled)
-				TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
 

@@ -199,10 +199,15 @@ jobs:
             tests/results/
           if-no-files-found: ignore
 
+      - name: Install new 7-Zip from homebrew
+        if: always()
+        run: |
+          brew install sevenzip
+
       - name: Pack build artifacts
         if: always()
         run: |
-          7z a -ms=on build-macos.7z bin/OSX/ bin/MacOSX/ lib/OSX/
+          7zz a -ms=on build-macos.7z bin/OSX/ bin/MacOSX/ lib/OSX/
       
       - name: Upload build artifacts
         if: always()
@@ -268,10 +273,15 @@ jobs:
             tests/results/
           if-no-files-found: ignore
 
+      - name: Install new 7-Zip from homebrew
+        if: always()
+        run: |
+          brew install sevenzip
+
       - name: Pack build artifacts
         if: always()
         run: |
-          7z a -ms=on build-macos-intel.7z bin/OSX/ bin/MacOSX/ lib/OSX/
+          7zz a -ms=on build-macos-intel.7z bin/OSX/ bin/MacOSX/ lib/OSX/
       
       - name: Upload build artifacts
         if: always()

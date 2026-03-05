@@ -53,7 +53,9 @@ jobs:
 
       - name: Run Tests
         working-directory: tests
-        run: ..\bin\Win64-VisualStudio\tests.exe
+        run: |
+          New-Item -ItemType Directory -Force -Path results
+          ..\bin\Win64-VisualStudio\tests.exe
         continue-on-error: true
 
       - name: Upload test logs
@@ -97,14 +99,18 @@ jobs:
       - name: Run Tests
         working-directory: tests
         run: |
+          mkdir -p results
           ulimit -c unlimited
           echo "$PWD/core.%e.%p" | sudo tee /proc/sys/kernel/core_pattern
+          export XMODIFIERS=""
           xvfb-run ../bin/Linux/tests 2>&1 || true
-          if [ -f core.* ]; then
-            echo "::group::Backtrace from core dump"
-            gdb -batch -ex "thread apply all bt full" ../bin/Linux/tests core.* 2>&1 || true
-            echo "::endgroup::"
-          fi
+          for corefile in core.*; do
+            if [ -f "$corefile" ]; then
+              echo "::group::Backtrace from core dump"
+              gdb -batch -ex "thread apply all bt full" ../bin/Linux/tests "$corefile" 2>&1 || true
+              echo "::endgroup::"
+            fi
+          done
         continue-on-error: true
 
       - name: Upload test logs
@@ -132,7 +138,17 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build Irrlicht static library
-        run: make -C source/Irrlicht staticlib_osx NDEBUG=1 -j$(sysctl -n hw.ncpu)
+        run: |
+          make -C source/Irrlicht staticlib_osx NDEBUG=1 -j$(sysctl -n hw.ncpu)
+          # Recompile files that need ObjC++ (they use #import <Cocoa/Cocoa.h>)
+          cd source/Irrlicht
+          CXXINCS="-I../../include -Izlib -Ijpeglib -Ilibpng"
+          c++ $CXXINCS -DIRRLICHT_EXPORTS=1 -Wall -pipe -fno-exceptions -fno-rtti -O3 \
+            -x objective-c++ -c -o COSOperator.o COSOperator.cpp
+          c++ $CXXINCS -DIRRLICHT_EXPORTS=1 -Wall -pipe -fno-exceptions -fno-rtti -O3 \
+            -x objective-c++ -c -o Irrlicht.o Irrlicht.cpp
+          ar rs libIrrlicht.a COSOperator.o Irrlicht.o
+          cp libIrrlicht.a ../../lib/MacOSX/
 
       - name: Build Examples
         continue-on-error: true
@@ -161,7 +177,9 @@ jobs:
 
       - name: Run Tests
         working-directory: tests
-        run: ../bin/MacOSX/tests
+        run: |
+          mkdir -p results
+          ../bin/MacOSX/tests
         continue-on-error: true
 
       - name: Upload test logs

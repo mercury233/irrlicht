@@ -150,7 +150,8 @@ CIrrDeviceLinux::CIrrDeviceLinux(const SIrrlichtCreationParameters& param)
 		return;
 
 #ifdef _IRR_COMPILE_WITH_X11_
-	createInputContext();
+	if (XWindow)
+		createInputContext();
 #endif
 
 	createGUIAndScene();

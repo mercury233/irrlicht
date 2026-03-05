@@ -113,7 +113,6 @@ staticlib sharedlib: CXXINCS += -I/usr/X11R6/include
 staticlib_osx sharedlib_osx install_osx: SYSTEM = MacOSX
 staticlib_osx sharedlib_osx: IRROTHEROBJ += CIrrDeviceOSX.o CNSOGLManager.o
 staticlib_osx sharedlib_osx: CXXINCS += -I/usr/X11R6/include
-staticlib_osx sharedlib_osx: CXXFLAGS += -x objective-c++
 sharedlib_osx install_osx: SHARED_LIB = libIrrlicht.dylib
 sharedlib_osx: LDFLAGS += -framework Cocoa -framework Carbon -framework OpenGL -framework IOKit
 
@@ -189,6 +188,10 @@ TAGS:
 # Create object files from objective-c code
 %.o:%.mm
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
+
+# Create dependency files for objective-c code
+%.d:%.mm
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MM -MF $@ $<
 
 ifneq ($(MAKECMDGOALS),clean)
 -include $(LINKOBJ:.o=.d)

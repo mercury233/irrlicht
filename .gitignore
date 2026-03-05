@@ -1,1 +1,3 @@
 /premake*.lua
+/bin/Win64-VisualStudio/*
+/lib/Win64-visualStudio/*

@@ -1,0 +1,129 @@
+name: CI Build & Test
+
+on:
+  push:
+    branches: [ mercury ]
+  pull_request:
+    branches: [ main, master, trunk, mercury ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    name: Windows (VS2022 x64)
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build Irrlicht DLL
+        run: msbuild source\Irrlicht\Irrlicht17.0.sln /p:Configuration=Release /p:Platform=x64 /m
+
+      - name: Build Examples
+        run: msbuild examples\BuildAllExamples_vc17.sln /p:Configuration=Release /p:Platform=x64 /m
+
+      - name: Build Tests
+        run: msbuild tests\tests_vc17.sln /p:Configuration=Release /p:Platform=x64 /m
+
+      - name: Run Tests
+        working-directory: tests
+        run: ..\bin\Win64-VisualStudio\tests.exe
+        continue-on-error: true
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs-windows
+          path: tests/tests.log
+          if-no-files-found: ignore
+
+  build-ubuntu:
+    name: Ubuntu 24.04
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl-dev libxxf86vm-dev libx11-dev libxext-dev libxcursor-dev xvfb
+
+      - name: Build Irrlicht static library
+        run: make -C source/Irrlicht -j$(nproc) NDEBUG=1
+
+      - name: Build Examples
+        run: make -C examples
+
+      - name: Build Tests
+        run: make -C tests all_linux NDEBUG=1
+
+      - name: Run Tests
+        working-directory: tests
+        run: xvfb-run ../bin/Linux/tests
+        continue-on-error: true
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs-ubuntu
+          path: tests/tests.log
+          if-no-files-found: ignore
+
+  build-macos:
+    name: macOS 15 (ARM)
+    runs-on: macos-15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Irrlicht static library
+        run: |
+          cd source/Irrlicht
+          # Fix outdated macOS target: correct source file paths and remove broken flags
+          sed -i '' 's|MacOSX/CIrrDeviceMacOSX.o MacOSX/OSXClipboard.o MacOSX/AppDelegate.o|CIrrDeviceOSX.o CNSOGLManager.o|g' Makefile
+          sed -i '' 's|-IMacOSX -I/usr/X11R6/include||g' Makefile
+          sed -i '' '/LDFLAGS += --no-export-all-symbols --add-stdcall-alias/d' Makefile
+          make staticlib_osx NDEBUG=1 -j$(sysctl -n hw.ncpu)
+
+      - name: Build Examples
+        continue-on-error: true
+        run: |
+          mkdir -p bin/MacOSX
+          for dir in examples/[0123]* examples/Demo; do
+            if [ -d "$dir" ] && ls "$dir"/*.cpp > /dev/null 2>&1; then
+              name=$(basename "$dir")
+              echo "::group::Building $name"
+              c++ -std=c++14 -Iinclude -O3 -fno-exceptions -DGL_SILENCE_DEPRECATION \
+                "$dir"/*.cpp -o "bin/MacOSX/$name" \
+                -Llib/MacOSX -lIrrlicht \
+                -framework OpenGL -framework Cocoa -framework IOKit -framework Carbon \
+                2>&1 || echo "::warning::$name failed to build"
+              echo "::endgroup::"
+            fi
+          done
+
+      - name: Build Tests
+        run: |
+          mkdir -p bin/MacOSX
+          c++ -std=c++14 -Iinclude -Wall -O3 -fno-exceptions -DGL_SILENCE_DEPRECATION \
+            tests/*.cpp -o bin/MacOSX/tests \
+            -Llib/MacOSX -lIrrlicht \
+            -framework OpenGL -framework Cocoa -framework IOKit -framework Carbon
+
+      - name: Run Tests
+        working-directory: tests
+        run: ../bin/MacOSX/tests
+        continue-on-error: true
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs-macos
+          path: tests/tests.log
+          if-no-files-found: ignore

@@ -12,11 +12,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#ifdef _IRR_WINDOWS_API_
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
-
 namespace irr
 {
 namespace core
@@ -1366,8 +1361,7 @@ typedef string<c8> stringc;
 typedef string<wchar_t> stringw;
 
 //! Converts UTF-8/multibyte string to wide character string
-/** On Windows: Converts from UTF-8 (encoding-agnostic, does not depend on locale).
-	On other platforms: Uses current locale settings (UTF-8 is recommended).
+/** C locale must be set to UTF-8 for correct conversion.
 	\return Pointer to newly allocated wide character string; caller must delete[].
 	*/
 static inline wchar_t* toWideChar(const char* p)
@@ -1378,26 +1372,16 @@ static inline wchar_t* toWideChar(const char* p)
 		ws[0] = 0;
 		return ws;
 	}
-#ifdef _IRR_WINDOWS_API_
-	int len = MultiByteToWideChar(CP_UTF8, 0, p, -1, NULL, 0);
-	if (len <= 0) len = 1;
-	wchar_t* ws = new wchar_t[len];
-	if (MultiByteToWideChar(CP_UTF8, 0, p, -1, ws, len) == 0)
-		ws[0] = 0;
-	return ws;
-#else
 	size_t lenOld = strlen(p);
 	wchar_t* ws = new wchar_t[lenOld + 1];
 	size_t lenNew = mbstowcs(ws, p, lenOld + 1);
 	if (lenNew == (size_t)-1) lenNew = 0;
 	ws[lenNew] = 0;
 	return ws;
-#endif
 }
 
 //! Converts wide character string to UTF-8/multibyte string
-/** On Windows: Converts to UTF-8 (encoding-agnostic, does not depend on locale).
-	On other platforms: Uses current locale settings (UTF-8 is recommended).
+/** C locale must be set to UTF-8 for correct conversion.
 	\return Pointer to newly allocated multibyte string; caller must delete[].
 	*/
 static inline char* toMultiByte(const wchar_t* p)
@@ -1408,14 +1392,6 @@ static inline char* toMultiByte(const wchar_t* p)
 		cs[0] = 0;
 		return cs;
 	}
-#ifdef _IRR_WINDOWS_API_
-	int len = WideCharToMultiByte(CP_UTF8, 0, p, -1, NULL, 0, NULL, NULL);
-	if (len <= 0) len = 1;
-	char* cs = new char[len];
-	if (WideCharToMultiByte(CP_UTF8, 0, p, -1, cs, len, NULL, NULL) == 0)
-		cs[0] = 0;
-	return cs;
-#else
 	size_t lenOld = wcslen(p);
 	// Allocate worst-case buffer (MB_CUR_MAX bytes per wchar_t)
 	size_t bufSize = lenOld * MB_CUR_MAX + 1;
@@ -1424,7 +1400,6 @@ static inline char* toMultiByte(const wchar_t* p)
 	if (lenNew == (size_t)-1) lenNew = 0;
 	cs[lenNew] = 0;
 	return cs;
-#endif
 }
 
 } // end namespace core

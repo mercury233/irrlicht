@@ -494,6 +494,7 @@ CIrrDeviceMacOSX::CIrrDeviceMacOSX(const SIrrlichtCreationParameters& param)
 		if(!CreationParams.WindowId) //load menus if standalone application
 		{
 			[[NSAutoreleasePool alloc] init];
+			[[NSApplication sharedApplication] setActivationPolicy:NSApplicationActivationPolicyRegular];
 			[[NSApplication sharedApplication] activateIgnoringOtherApps:YES];
 			[[NSApplication sharedApplication] setDelegate:[[[AppDelegate alloc] initWithDevice:this] autorelease]];
 			[NSBundle loadNibNamed:@"MainMenu" owner:[NSApp delegate]];

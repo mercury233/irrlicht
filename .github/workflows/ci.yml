@@ -52,29 +52,35 @@ jobs:
         run: msbuild tests\tests_vc17.sln /p:Configuration=Release /p:Platform=x64 /m
 
       - name: Run Tests
-        timeout-minutes: 20
+        timeout-minutes: 2
         working-directory: tests
         run: |
           New-Item -ItemType Directory -Force -Path results
           ..\bin\Win64-VisualStudio\tests.exe
         continue-on-error: true
 
-      - name: Upload test logs
+      - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-logs-windows
-          path: tests/tests.log
+          name: test-results-windows
+          path: |
+            tests/tests.log
+            tests/results/
           if-no-files-found: ignore
 
+      - name: Pack build artifacts
+        if: always()
+        run: |
+          7z a -ms=on build-windows-x64.7z bin/Win64-VisualStudio/ lib/Win64-visualStudio/
+      
       - name: Upload build artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: build-windows-x64
-          path: |
-            bin/Win64-VisualStudio/
-            lib/Win64-visualStudio/
+          path: build-windows-x64.7z
+          compression-level: 0
 
   build-ubuntu:
     name: Ubuntu 24.04
@@ -114,22 +120,28 @@ jobs:
           done
         continue-on-error: true
 
-      - name: Upload test logs
+      - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-logs-ubuntu
-          path: tests/tests.log
+          name: test-results-ubuntu
+          path: |
+            tests/tests.log
+            tests/results/
           if-no-files-found: ignore
 
+      - name: Pack build artifacts
+        if: always()
+        run: |
+          7z a -ms=on build-ubuntu.7z bin/Linux/ lib/Linux/
+      
       - name: Upload build artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: build-ubuntu
-          path: |
-            bin/Linux/
-            lib/Linux/
+          path: build-ubuntu.7z
+          compression-level: 0
 
   build-macos:
     name: macOS 15 (ARM)
@@ -177,23 +189,28 @@ jobs:
           ../bin/MacOSX/tests
         continue-on-error: true
 
-      - name: Upload test logs
+      - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-logs-macos
-          path: tests/tests.log
+          name: test-results-macos
+          path: |
+            tests/tests.log
+            tests/results/
           if-no-files-found: ignore
 
+      - name: Pack build artifacts
+        if: always()
+        run: |
+          7z a -ms=on build-macos.7z bin/OSX/ bin/MacOSX/ lib/OSX/
+      
       - name: Upload build artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: build-macos
-          path: |
-            bin/OSX/
-            bin/MacOSX/
-            lib/OSX/
+          path: build-macos.7z
+          compression-level: 0
 
   build-macos-intel:
     name: macOS 15 (Intel x86_64)
@@ -241,20 +258,25 @@ jobs:
           ../bin/MacOSX/tests
         continue-on-error: true
 
-      - name: Upload test logs
+      - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-logs-macos-intel
-          path: tests/tests.log
+          name: test-results-macos-intel
+          path: |
+            tests/tests.log
+            tests/results/
           if-no-files-found: ignore
 
+      - name: Pack build artifacts
+        if: always()
+        run: |
+          7z a -ms=on build-macos-intel.7z bin/OSX/ bin/MacOSX/ lib/OSX/
+      
       - name: Upload build artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: build-macos-intel
-          path: |
-            bin/OSX/
-            bin/MacOSX/
-            lib/OSX/
+          path: build-macos-intel.7z
+          compression-level: 0

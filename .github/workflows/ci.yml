@@ -18,6 +18,30 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
+      - name: Check DirectX SDK
+        id: dxsdk
+        uses: actions/cache@v4
+        with:
+          key: dxsdk
+          path: DXSDK
+
+      - name: Download DirectX SDK
+        if: steps.dxsdk.outputs.cache-hit != 'true'
+        id: dxsdk-download
+        uses: mercury233/action-cache-download-file@v1.0.0
+        with:
+          url: https://download.microsoft.com/download/a/e/7/ae743f1f-632b-4809-87a9-aa1bb3458e31/DXSDK_Jun10.exe
+
+      - name: Install DirectX SDK
+        if: steps.dxsdk.outputs.cache-hit != 'true'
+        run: |
+          7z x ${{ steps.dxsdk-download.outputs.filepath }} -aoa
+
+      - name: Set DirectX SDK environment variable
+        run: |
+          $dxsdkPath = Resolve-Path 'DXSDK'
+          "DXSDK_DIR=$($dxsdkPath.ProviderPath)\" | Out-File -FilePath $env:GITHUB_ENV -Append
+
       - name: Build Irrlicht DLL
         run: msbuild source\Irrlicht\Irrlicht17.0.sln /p:Configuration=Release /p:Platform=x64 /m
 
@@ -40,6 +64,15 @@ jobs:
           path: tests/tests.log
           if-no-files-found: ignore
 
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-windows-x64
+          path: |
+            bin/Win64-VisualStudio/
+            lib/Win64-visualStudio/
+
   build-ubuntu:
     name: Ubuntu 24.04
     runs-on: ubuntu-24.04
@@ -50,7 +83,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgl-dev libxxf86vm-dev libx11-dev libxext-dev libxcursor-dev xvfb
+          sudo apt-get install -y libgl-dev libxxf86vm-dev libx11-dev libxext-dev libxcursor-dev xvfb gdb
 
       - name: Build Irrlicht static library
         run: make -C source/Irrlicht -j$(nproc) NDEBUG=1
@@ -59,11 +92,19 @@ jobs:
         run: make -C examples
 
       - name: Build Tests
-        run: make -C tests all_linux NDEBUG=1
+        run: make -C tests all_linux
 
       - name: Run Tests
         working-directory: tests
-        run: xvfb-run ../bin/Linux/tests
+        run: |
+          ulimit -c unlimited
+          echo "$PWD/core.%e.%p" | sudo tee /proc/sys/kernel/core_pattern
+          xvfb-run ../bin/Linux/tests 2>&1 || true
+          if [ -f core.* ]; then
+            echo "::group::Backtrace from core dump"
+            gdb -batch -ex "thread apply all bt full" ../bin/Linux/tests core.* 2>&1 || true
+            echo "::endgroup::"
+          fi
         continue-on-error: true
 
       - name: Upload test logs
@@ -74,6 +115,15 @@ jobs:
           path: tests/tests.log
           if-no-files-found: ignore
 
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-ubuntu
+          path: |
+            bin/Linux/
+            lib/Linux/
+
   build-macos:
     name: macOS 15 (ARM)
     runs-on: macos-15
@@ -82,13 +132,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build Irrlicht static library
-        run: |
-          cd source/Irrlicht
-          # Fix outdated macOS target: correct source file paths and remove broken flags
-          sed -i '' 's|MacOSX/CIrrDeviceMacOSX.o MacOSX/OSXClipboard.o MacOSX/AppDelegate.o|CIrrDeviceOSX.o CNSOGLManager.o|g' Makefile
-          sed -i '' 's|-IMacOSX -I/usr/X11R6/include||g' Makefile
-          sed -i '' '/LDFLAGS += --no-export-all-symbols --add-stdcall-alias/d' Makefile
-          make staticlib_osx NDEBUG=1 -j$(sysctl -n hw.ncpu)
+        run: make -C source/Irrlicht staticlib_osx NDEBUG=1 -j$(sysctl -n hw.ncpu)
 
       - name: Build Examples
         continue-on-error: true
@@ -127,3 +171,12 @@ jobs:
           name: test-logs-macos
           path: tests/tests.log
           if-no-files-found: ignore
+
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-macos
+          path: |
+            bin/MacOSX/
+            lib/MacOSX/

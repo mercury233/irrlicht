@@ -156,7 +156,8 @@ jobs:
             scheme=$(basename "$scheme_file" .xcscheme)
             name=$(basename "$(dirname "$proj")")
             echo "::group::Building $name"
-            xcodebuild -project "$proj" -scheme "$scheme" -configuration Release build 2>&1 || \
+            xcodebuild -project "$proj" -scheme "$scheme" -configuration Release build \
+              OTHER_LDFLAGS="-framework Carbon -framework OpenGL -framework Cocoa -framework IOKit" 2>&1 || \
               echo "::warning::$name failed to build"
             echo "::endgroup::"
           done
@@ -189,6 +190,70 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-macos
+          path: |
+            bin/OSX/
+            bin/MacOSX/
+            lib/OSX/
+
+  build-macos-intel:
+    name: macOS 15 (Intel x86_64)
+    runs-on: macos-15-intel
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Irrlicht static library
+        run: |
+          xcodebuild -project source/Irrlicht/Irrlicht.xcodeproj \
+            -scheme Irrlicht_OSX \
+            -configuration Release \
+            build
+
+      - name: Build Examples
+        continue-on-error: true
+        run: |
+          mkdir -p bin/OSX
+          for proj in examples/*/*.xcodeproj; do
+            [ -d "$proj" ] || continue
+            scheme_file=$(ls "$proj"/xcshareddata/xcschemes/*.xcscheme 2>/dev/null | head -1)
+            [ -n "$scheme_file" ] || continue
+            scheme=$(basename "$scheme_file" .xcscheme)
+            name=$(basename "$(dirname "$proj")")
+            echo "::group::Building $name"
+            xcodebuild -project "$proj" -scheme "$scheme" -configuration Release build \
+              OTHER_LDFLAGS="-framework Carbon -framework OpenGL -framework Cocoa -framework IOKit" 2>&1 || \
+              echo "::warning::$name failed to build"
+            echo "::endgroup::"
+          done
+
+      - name: Build Tests
+        run: |
+          mkdir -p bin/MacOSX
+          c++ -std=c++14 -Iinclude -Wall -O3 -fno-exceptions \
+            tests/*.cpp -o bin/MacOSX/tests \
+            -Llib/OSX -lIrrlicht \
+            -framework OpenGL -framework Cocoa -framework IOKit -framework Carbon
+
+      - name: Run Tests
+        working-directory: tests
+        run: |
+          mkdir -p results
+          ../bin/MacOSX/tests
+        continue-on-error: true
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs-macos-intel
+          path: tests/tests.log
+          if-no-files-found: ignore
+
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-macos-intel
           path: |
             bin/OSX/
             bin/MacOSX/

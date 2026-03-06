@@ -217,7 +217,7 @@ void pollJoysticks()
 
 		if (!FAILED(ActiveJoysticks[joystick].lpdijoy->GetDeviceState(sizeof(info),&info)))
 		{
-			SEvent event;
+			SEvent event{};
 
 			event.EventType = irr::EET_JOYSTICK_INPUT_EVENT;
 			event.JoystickEvent.Joystick = (u8)joystick;
@@ -318,7 +318,7 @@ void pollJoysticks()
 			info.dwFlags &= ~(JOY_RETURNPOV|JOY_RETURNPOVCTS);
 		if(JOYERR_NOERROR == joyGetPosEx(ActiveJoysticks[joystick].Index, &info))
 		{
-			SEvent event;
+			SEvent event{};
 
 			event.EventType = irr::EET_JOYSTICK_INPUT_EVENT;
 			event.JoystickEvent.Joystick = (u8)joystick;
@@ -653,7 +653,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	#endif
 
 	irr::CIrrDeviceWin32* dev = 0;
-	irr::SEvent event;
+	irr::SEvent event{};
 
 	static irr::s32 ClickCount=0;
 	if (GetCapture() != hWnd && ClickCount > 0)
@@ -1924,7 +1924,12 @@ bool CIrrDeviceWin32::setGammaRamp( f32 red, f32 green, f32 blue, f32 brightness
 	calculateGammaRamp( ramp[1], green, brightness, contrast );
 	calculateGammaRamp( ramp[2], blue, brightness, contrast );
 
-	HDC dc = GetDC(0);
+	HDC dc = GetDC(HWnd);
+	if ( !dc )
+	{
+		os::Printer::log("Could not get device context for setGammaRamp.", ELL_ERROR);
+		return false;
+	}
 	r = SetDeviceGammaRamp ( dc, ramp ) == TRUE;
 	ReleaseDC(HWnd, dc);
 	return r;
@@ -1936,7 +1941,12 @@ bool CIrrDeviceWin32::getGammaRamp( f32 &red, f32 &green, f32 &blue, f32 &bright
 	bool r;
 	u16 ramp[3][256];
 
-	HDC dc = GetDC(0);
+	HDC dc = GetDC(HWnd);
+	if ( !dc )
+	{
+		os::Printer::log("Could not get device context for getGammaRamp.", ELL_ERROR);
+		return false;
+	}
 	r = GetDeviceGammaRamp ( dc, ramp ) == TRUE;
 	ReleaseDC(HWnd, dc);
 

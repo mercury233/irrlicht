@@ -660,8 +660,6 @@ IReadFile* CZipReader::createAndOpenFile(u32 index)
 				inflateEnd(&stream);
 				if (err == Z_STREAM_END)
 					err = Z_OK;
-				err = Z_OK;
-				inflateEnd(&stream);
 			}
 
 			if (decrypted)

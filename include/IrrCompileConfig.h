@@ -270,6 +270,14 @@ the engine will no longer read .png images. */
 #undef _IRR_USE_NON_SYSTEM_LIB_PNG_
 #endif
 
+//! Define _IRR_COMPILE_WITH_LIBWEBP_ to enable compiling the engine using libwebp.
+/** This enables the engine to read and write webp images. If you comment this out,
+the engine will no longer read or write .webp images. */
+#define _IRR_COMPILE_WITH_LIBWEBP_
+#ifdef NO_IRR_COMPILE_WITH_LIBWEBP_
+#undef _IRR_COMPILE_WITH_LIBWEBP_
+#endif
+
 //! Define _IRR_D3D_NO_SHADER_DEBUGGING to disable shader debugging in D3D9
 /** If _IRR_D3D_NO_SHADER_DEBUGGING is undefined in IrrCompileConfig.h,
 it is possible to debug all D3D9 shaders in VisualStudio. All shaders
@@ -506,6 +514,11 @@ B3D, MS3D or X meshes */
 #ifdef NO_IRR_COMPILE_WITH_PNG_LOADER_
 #undef _IRR_COMPILE_WITH_PNG_LOADER_
 #endif
+//! Define _IRR_COMPILE_WITH_WEBP_LOADER_ if you want to load .webp files
+#define _IRR_COMPILE_WITH_WEBP_LOADER_
+#ifdef NO_IRR_COMPILE_WITH_WEBP_LOADER_
+#undef _IRR_COMPILE_WITH_WEBP_LOADER_
+#endif
 //! Define _IRR_COMPILE_WITH_PPM_LOADER_ if you want to load .ppm/.pgm/.pbm files
 #define _IRR_COMPILE_WITH_PPM_LOADER_
 #ifdef NO_IRR_COMPILE_WITH_PPM_LOADER_
@@ -566,6 +579,11 @@ B3D, MS3D or X meshes */
 #define _IRR_COMPILE_WITH_PNG_WRITER_
 #ifdef NO_IRR_COMPILE_WITH_PNG_WRITER_
 #undef _IRR_COMPILE_WITH_PNG_WRITER_
+#endif
+//! Define _IRR_COMPILE_WITH_WEBP_WRITER_ if you want to write .webp files
+#define _IRR_COMPILE_WITH_WEBP_WRITER_
+#ifdef NO_IRR_COMPILE_WITH_WEBP_WRITER_
+#undef _IRR_COMPILE_WITH_WEBP_WRITER_
 #endif
 //! Define _IRR_COMPILE_WITH_PPM_WRITER_ if you want to write .ppm files
 #define _IRR_COMPILE_WITH_PPM_WRITER_

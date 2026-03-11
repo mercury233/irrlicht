@@ -58,6 +58,9 @@ IImageLoader* createImageLoaderPPM();
 //! creates a loader which is able to load rgb images
 IImageLoader* createImageLoaderRGB();
 
+//! creates a loader which is able to load webp images
+IImageLoader* createImageLoaderWEBP();
+
 
 //! creates a writer which is able to save bmp images
 IImageWriter* createImageWriterBMP();
@@ -79,6 +82,9 @@ IImageWriter* createImageWriterPNG();
 
 //! creates a writer which is able to save ppm images
 IImageWriter* createImageWriterPPM();
+
+//! creates a writer which is able to save webp images
+IImageWriter* createImageWriterWEBP();
 
 //! constructor
 CNullDriver::CNullDriver(io::IFileSystem* io, const core::dimension2d<u32>& screenSize)
@@ -149,6 +155,9 @@ CNullDriver::CNullDriver(io::IFileSystem* io, const core::dimension2d<u32>& scre
 #ifdef _IRR_COMPILE_WITH_PNG_LOADER_
 	SurfaceLoader.push_back(video::createImageLoaderPNG());
 #endif
+#ifdef _IRR_COMPILE_WITH_WEBP_LOADER_
+	SurfaceLoader.push_back(video::createImageLoaderWEBP());
+#endif
 #ifdef _IRR_COMPILE_WITH_JPG_LOADER_
 	SurfaceLoader.push_back(video::createImageLoaderJPG());
 #endif
@@ -174,6 +183,9 @@ CNullDriver::CNullDriver(io::IFileSystem* io, const core::dimension2d<u32>& scre
 #endif
 #ifdef _IRR_COMPILE_WITH_PNG_WRITER_
 	SurfaceWriter.push_back(video::createImageWriterPNG());
+#endif
+#ifdef _IRR_COMPILE_WITH_WEBP_WRITER_
+	SurfaceWriter.push_back(video::createImageWriterWEBP());
 #endif
 #ifdef _IRR_COMPILE_WITH_BMP_WRITER_
 	SurfaceWriter.push_back(video::createImageWriterBMP());

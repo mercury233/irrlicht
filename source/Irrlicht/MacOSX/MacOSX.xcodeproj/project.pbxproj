@@ -6089,15 +6089,15 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(NATIVE_ARCH_ACTUAL)";
-				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				GCC_PREPROCESSOR_DEFINITIONS = "GLES_SILENCE_DEPRECATION PNG_ARM_NEON_OPT=0 PNG_ARM_NEON_IMPLEMENTATION=0";
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = NO;
 				HEADER_SEARCH_PATHS = ../../../include;
-				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				OTHER_CFLAGS = (
 					"-DMACOSX",
 					"-D_DEBUG",
+					"-U__STRICT_ANSI__"
 				);
 				PREBINDING = NO;
 				SDKROOT = "";
@@ -6108,7 +6108,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(NATIVE_ARCH_ACTUAL)";
-				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				GCC_DYNAMIC_NO_PIC = YES;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
@@ -6119,8 +6118,11 @@
 				GCC_WARN_UNUSED_VARIABLE = NO;
 				HEADER_SEARCH_PATHS = ../../../include;
 				INSTALL_MODE_FLAG = "a+rwx";
-				MACOSX_DEPLOYMENT_TARGET = 10.7;
-				OTHER_CFLAGS = "-DMACOSX";
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				OTHER_CFLAGS = (
+					"-DMACOSX",
+					"-U__STRICT_ANSI__"
+				);
 				PREBINDING = NO;
 				SDKROOT = "";
 			};
@@ -6146,6 +6148,7 @@
 				INSTALL_PATH = "@executable_path/../Frameworks";
 				OTHER_CFLAGS = (
 					"-read_only_relocs",
+					"-U__STRICT_ANSI__",
 					suppress,
 				);
 				OTHER_LDFLAGS = (
@@ -6183,6 +6186,7 @@
 				INSTALL_PATH = "@executable_path/../Frameworks";
 				OTHER_CFLAGS = (
 					"-read_only_relocs",
+					"-U__STRICT_ANSI__",
 					suppress,
 				);
 				OTHER_LDFLAGS = (

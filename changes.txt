@@ -1,5 +1,7 @@
 --------------------------
 Changes in 1.8.6
+- Fix forced chdir behavior in CIrrDeviceMacOSX, the working directory should not be forcibly changed when the program is not running inside an app bundle.
+  Thanks @Mercury233 for the patch (#330 - 4)
 - Avoid potential troubles with _IRR_WCHAR_FILESYSTEM in CZipReader error logging
   Thanks @Mercury233 for the patch (#330 - 18)
 - Set Activation Policy to Regular on macOS to ensure the application appears in the Dock and has a menu bar

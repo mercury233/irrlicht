@@ -1,5 +1,7 @@
 --------------------------
 Changes in 1.8.6
+- Avoid potential troubles with _IRR_WCHAR_FILESYSTEM in CZipReader error logging
+  Thanks @Mercury233 for the patch (#330 - 18)
 - Set Activation Policy to Regular on macOS to ensure the application appears in the Dock and has a menu bar
   Thanks @Mercury233 for the patch (#330 - 15)
 - Fix MacOS 10.15 only rendering to quarter of window. 

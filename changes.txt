@@ -1,5 +1,7 @@
 --------------------------
 Changes in 1.8.6
+- Set Activation Policy to Regular on macOS to ensure the application appears in the Dock and has a menu bar
+  Thanks @Mercury233 for the patch (#330 - 15)
 - Fix MacOS 10.15 only rendering to quarter of window. 
   Thanks @bridgeco for the patch: https://irrlicht.sourceforge.io/forum/viewtopic.php?f=7&t=52644
 - Update libpng to 1.6.54 (from 1.6.37)

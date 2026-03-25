@@ -828,7 +828,7 @@ void CSoftwareDriver::draw2DLine(const core::position2d<s32>& start,
 //! Draws a pixel
 void CSoftwareDriver::drawPixel(u32 x, u32 y, const SColor & color)
 {
-	BackBuffer->setPixel(x, y, color, true);
+	RenderTargetSurface->setPixel(x, y, color, true);
 }
 
 

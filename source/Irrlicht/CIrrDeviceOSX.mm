@@ -565,7 +565,6 @@ CIrrDeviceMacOSX::CIrrDeviceMacOSX(const SIrrlichtCreationParameters& param)
 	SoftwareDriverTarget(nil),SoftwareRendererType(0)
 {
 	struct utsname name;
-	NSString *path;
 
 #ifdef _DEBUG
 	setDebugName("CIrrDeviceMacOSX");
@@ -578,12 +577,15 @@ CIrrDeviceMacOSX::CIrrDeviceMacOSX(const SIrrlichtCreationParameters& param)
 		if (!CreationParams.WindowId)
 		{
 			[[NSAutoreleasePool alloc] init];
+			[[NSApplication sharedApplication] setActivationPolicy:NSApplicationActivationPolicyRegular];
 			[[NSApplication sharedApplication] activateIgnoringOtherApps:YES];
 			[[NSApplication sharedApplication] setDelegate:[[[CIrrDelegateOSX alloc] initWithDevice:this] autorelease]];
             
             // Create menu
             
             NSString* bundleName = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleName"];
+            if (!bundleName)
+                bundleName = @"Irrlicht";
             
             NSMenu* mainMenu = [[[NSMenu alloc] initWithTitle:@"MainMenu"] autorelease];
             NSMenu* menu = [[[NSMenu alloc] initWithTitle:bundleName] autorelease];
@@ -597,10 +599,11 @@ CIrrDeviceMacOSX::CIrrDeviceMacOSX(const SIrrlichtCreationParameters& param)
             [NSApp finishLaunching];
 		}
 
-		path = [[NSBundle mainBundle] bundlePath];
-        path = [path stringByAppendingString:@"/Contents/Resources"];
-		chdir([path fileSystemRepresentation]);
-        [path release];
+        NSString* bundlePath = [[NSBundle mainBundle] bundlePath];
+        if ([[bundlePath lowercaseString] hasSuffix:@".app"]) {
+            NSString* path = [bundlePath stringByAppendingString:@"/Contents/Resources"];
+            chdir([path fileSystemRepresentation]);
+        }
 	}
 
 	uname(&name);

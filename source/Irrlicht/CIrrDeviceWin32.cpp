@@ -1504,7 +1504,7 @@ bool CIrrDeviceWin32::isWindowMinimized() const
 	plc.length=sizeof(WINDOWPLACEMENT);
 	bool ret=false;
 	if (GetWindowPlacement(HWnd,&plc))
-		ret=(plc.showCmd & SW_SHOWMINIMIZED)!=0;
+		ret = plc.showCmd == SW_SHOWMINIMIZED;
 	_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX;
 	return ret;
 }

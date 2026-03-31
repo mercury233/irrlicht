@@ -954,9 +954,6 @@
     <ClInclude Include="CD3D9Texture.h">
       <Filter>Irrlicht\video\Direct3D9</Filter>
     </ClInclude>
-    <ClInclude Include="CDepthBuffer.h">
-      <Filter>Irrlicht\video\Burning Video</Filter>
-    </ClInclude>
     <ClInclude Include="CSoftware2MaterialRenderer.h">
       <Filter>Irrlicht\video\Burning Video</Filter>
     </ClInclude>
@@ -967,9 +964,6 @@
       <Filter>Irrlicht\video\Burning Video</Filter>
     </ClInclude>
     <ClInclude Include="IBurningShader.h">
-      <Filter>Irrlicht\video\Burning Video</Filter>
-    </ClInclude>
-    <ClInclude Include="IDepthBuffer.h">
       <Filter>Irrlicht\video\Burning Video</Filter>
     </ClInclude>
     <ClInclude Include="S4DVertex.h">
@@ -1448,6 +1442,9 @@
     </ClInclude>
     <ClInclude Include="..\..\include\IUserData.h">
       <Filter>include\io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\SExposedTextureData.h">
+      <Filter>include\video</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

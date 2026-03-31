@@ -1432,12 +1432,6 @@
     <ClInclude Include="..\..\include\EDeviceTypes.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\EMeshBufferTypes.h">
-      <Filter>include\scene</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\ESceneNodeUpdateAbs.h">
-      <Filter>include\scene</Filter>
-    </ClInclude>
     <ClInclude Include="CBufferRenderNode.h">
       <Filter>Irrlicht\scene\sceneNodes</Filter>
     </ClInclude>
@@ -1449,6 +1443,9 @@
     </ClInclude>
     <ClInclude Include="burning_shader_glsl_emu_undefine.h">
       <Filter>Irrlicht\video\Burning Video</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\SExposedTextureData.h">
+      <Filter>include\video</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

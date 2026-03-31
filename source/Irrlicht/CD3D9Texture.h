@@ -47,6 +47,15 @@ public:
 		return VertexTextureSupport;
 	}
 
+	virtual SExposedTextureData getExposedTextureData() const IRR_OVERRIDE
+	{
+		SExposedTextureData data;
+		data.D3D9.Texture = Texture;
+		data.D3D9.CubeTexture = CubeTexture;
+		data.D3D9.RTTSurface = RTTSurface;
+		return data;
+	}
+
 private:
 	friend class CD3D9Driver;
 

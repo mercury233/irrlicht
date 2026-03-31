@@ -436,6 +436,14 @@ public:
 		Driver->getCacheHandler()->getTextureCache().set(0, prevTexture);
 	}
 
+	virtual SExposedTextureData getExposedTextureData() const IRR_OVERRIDE
+	{
+		SExposedTextureData data;
+		data.OpenGL.TextureType = TextureType;
+		data.OpenGL.TextureName = TextureName;
+		return data;
+	}
+
 	GLenum getOpenGLTextureType() const
 	{
 		return TextureType;

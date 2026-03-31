@@ -11,6 +11,7 @@
 #include "EDriverTypes.h"
 #include "path.h"
 #include "matrix4.h"
+#include "SExposedTextureData.h"
 
 namespace irr
 {
@@ -324,6 +325,19 @@ public:
 
 	//! Returns the type of texture
 	E_TEXTURE_TYPE getType() const { return Type; }
+
+	//! Returns driver specific data about the ITexture
+	/** This can be useful when interacting with other libraries
+	or working with low level driver functions directly.
+	Note that not all drivers will return anything useful.
+	Also use with care - Irrlicht has for example some internal 
+	state caches for textures (mainly the active texture) which 
+	can get messed up if you work on textures outside the engine.
+	\return Collection of drive specific texture data */
+	virtual SExposedTextureData getExposedTextureData() const
+	{
+		return SExposedTextureData();	// dummy without any useful data
+	}
 
 protected:
 

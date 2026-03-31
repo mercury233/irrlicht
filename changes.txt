@@ -1,5 +1,7 @@
 --------------------------
 Changes in 1.8.6
+- Do not send EGET_EDITBOX_CHANGED in CGUIEditbox when no actual character is input
+  Thanks @Mercury233 for the patch (#330 - 12)
 - Ignore more keys in edit-box that should not trigger character input events (shift, menu, windows, num-lock/print/scroll keys)
   Thanks @Mercury233 for the patch (#330 - 11)
 - Fix mismatched GetDC/ReleaseDC usage in CIrrDeviceWin32 gamma ramp functions

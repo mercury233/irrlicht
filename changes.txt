@@ -1,5 +1,7 @@
 --------------------------
 Changes in 1.8.6
+- Ignore more keys in edit-box that should not trigger character input events (shift, menu, windows, num-lock/print/scroll keys)
+  Thanks @Mercury233 for the patch (#330 - 11)
 - Fix mismatched GetDC/ReleaseDC usage in CIrrDeviceWin32 gamma ramp functions
   Thanks @Mercury233 for the patch (#330 - 17)
 - Fix forced chdir behavior in CIrrDeviceMacOSX, the working directory should not be forcibly changed when the program is not running inside an app bundle.

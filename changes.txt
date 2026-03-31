@@ -1,5 +1,9 @@
 --------------------------
 Changes in 1.8.6
+- Fix event order when selecting items in a ListBox via keyboard
+  When searching for lines in a listbox by typing first character it only updated the selection before the event when 
+  the found item was before the currently selected item, but failed to do so when it came after the current selection.
+  Thanks @Mercury233 for the patch (#330 - 16)
 - Do not send EGET_EDITBOX_CHANGED in CGUIEditbox when no actual character is input
   Thanks @Mercury233 for the patch (#330 - 12)
 - Ignore more keys in edit-box that should not trigger character input events (shift, menu, windows, num-lock/print/scroll keys)

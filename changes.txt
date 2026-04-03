@@ -1,5 +1,7 @@
 --------------------------
 Changes in 1.8.6
+- Fix CGUIButton showing wrong pressed image when setImage was called twice with different textures.
+  Thanks @Mercury233 for the patch (#332 - 3)
 - Fix zlib decompression calling inflateEnd twice and returning OK when it failed.
   Thanks @Mercury233 for the patch (#332 - 2)
 - Add EMIE_LMOUSE_DOUBLE_CLICK and EMIE_LMOUSE_TRIPLE_CLICK support on macOS. 

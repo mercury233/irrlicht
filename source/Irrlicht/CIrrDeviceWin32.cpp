@@ -1783,7 +1783,7 @@ bool CIrrDeviceWin32::getGammaRamp( f32 &red, f32 &green, f32 &blue, f32 &bright
 	HDC dc = GetDC(HWnd);
 	if ( !dc )
 	{
-		os::Printer::log("Could not get device context for setGammaRamp.", ELL_WARNING);
+		os::Printer::log("Could not get device context for getGammaRamp.", ELL_WARNING);
 		return false;
 	}
 	r = GetDeviceGammaRamp ( dc, ramp ) == TRUE;

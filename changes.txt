@@ -1,5 +1,7 @@
 --------------------------
 Changes in 1.8.6
+- Add EMIE_LMOUSE_DOUBLE_CLICK and EMIE_LMOUSE_TRIPLE_CLICK support on macOS. 
+  Thanks @Mercury233 for the patch (#332 - 1)
 - Fix event order when selecting items in a ListBox via keyboard
   When searching for lines in a listbox by typing first character it only updated the selection before the event when 
   the found item was before the currently selected item, but failed to do so when it came after the current selection.

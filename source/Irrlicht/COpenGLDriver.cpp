@@ -143,7 +143,7 @@ bool COpenGLDriver::initDriver(CIrrDeviceWin32* device)
 	PIXELFORMATDESCRIPTOR pfd = {
 		sizeof(PIXELFORMATDESCRIPTOR),             // Size Of This Pixel Format Descriptor
 		1,                                         // Version Number
-		static_cast<DWORD>(PFD_DRAW_TO_WINDOW |          // Format Must Support Window
+		(DWORD)(PFD_DRAW_TO_WINDOW |                     // Format Must Support Window
 		 PFD_SUPPORT_OPENGL |                            // Format Must Support OpenGL
 		 (Params.Doublebuffer ? PFD_DOUBLEBUFFER : 0) |  // Must Support Double Buffering
 		 (Params.Stereobuffer ? PFD_STEREO : 0)),        // Must Support Stereo Buffer

@@ -72,7 +72,7 @@ namespace video
 		//! Destructor
 		~SMaterialLayer()
 		{
-			if(TextureMatrix)
+			if ( TextureMatrix )
 			{
 				MatrixAllocator.destruct(TextureMatrix);
 				MatrixAllocator.deallocate(TextureMatrix);

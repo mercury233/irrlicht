@@ -1310,41 +1310,39 @@ void CGUIEditBox::inputChar(wchar_t c)
 	if (!isEnabled())
 		return;
 
-	if (c != 0)
+	if (c == 0)
+		return;
+
+	if (Text.size() < Max || Max == 0)
 	{
-		if (Text.size() < Max || Max == 0)
+		if (MarkBegin != MarkEnd)
 		{
-			core::stringw s;
+			// replace marked text
+			const s32 realmbgn = MarkBegin < MarkEnd ? MarkBegin : MarkEnd;
+			const s32 realmend = MarkBegin < MarkEnd ? MarkEnd : MarkBegin;
 
-			if (MarkBegin != MarkEnd)
-			{
-				// replace marked text
-				const s32 realmbgn = MarkBegin < MarkEnd ? MarkBegin : MarkEnd;
-				const s32 realmend = MarkBegin < MarkEnd ? MarkEnd : MarkBegin;
-
-				s = Text.subString(0, realmbgn);
-				s.append(c);
-				s.append( Text.subString(realmend, Text.size()-realmend) );
-				Text = s;
-				CursorPos = realmbgn+1;
-			}
-			else
-			{
-				// add new character
-				s = Text.subString(0, CursorPos);
-				s.append(c);
-				s.append( Text.subString(CursorPos, Text.size()-CursorPos) );
-				Text = s;
-				++CursorPos;
-			}
-
-			BlinkStartTime = os::Timer::getTime();
-			setTextMarkers(0, 0);
+			core::stringw s = Text.subString(0, realmbgn);
+			s.append(c);
+			s.append( Text.subString(realmend, Text.size()-realmend) );
+			Text = s;
+			CursorPos = realmbgn+1;
 		}
-		breakText();
-		calculateScrollPos();
-		sendGuiEvent(EGET_EDITBOX_CHANGED);
+		else
+		{
+			// add new character
+			core::stringw s = Text.subString(0, CursorPos);
+			s.append(c);
+			s.append( Text.subString(CursorPos, Text.size()-CursorPos) );
+			Text = s;
+			++CursorPos;
+		}
+
+		BlinkStartTime = os::Timer::getTime();
+		setTextMarkers(0, 0);
 	}
+	breakText();
+	calculateScrollPos();
+	sendGuiEvent(EGET_EDITBOX_CHANGED);
 }
 
 // calculate autoscroll

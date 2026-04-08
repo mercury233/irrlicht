@@ -2,9 +2,9 @@ name: CI Build & Test
 
 on:
   push:
-    branches: [ mercury ]
+    branches: [ main, test, dev ]
   pull_request:
-    branches: [ main, master, trunk, mercury ]
+    branches: [ main, test, dev ]
   workflow_dispatch:
 
 jobs:
@@ -13,14 +13,14 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
       - name: Check DirectX SDK
         id: dxsdk
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           key: dxsdk
           path: DXSDK
@@ -28,7 +28,7 @@ jobs:
       - name: Download DirectX SDK
         if: steps.dxsdk.outputs.cache-hit != 'true'
         id: dxsdk-download
-        uses: mercury233/action-cache-download-file@v1.0.0
+        uses: mercury233/action-cache-download-file@v1.1.0
         with:
           url: https://download.microsoft.com/download/a/e/7/ae743f1f-632b-4809-87a9-aa1bb3458e31/DXSDK_Jun10.exe
 
@@ -61,7 +61,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-results-windows
           path: |
@@ -76,18 +76,18 @@ jobs:
       
       - name: Upload build artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-windows-x64
           path: build-windows-x64.7z
-          compression-level: 0
+          archive: false
 
   build-ubuntu:
     name: Ubuntu 24.04
     runs-on: ubuntu-24.04
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install dependencies
         run: |
@@ -122,7 +122,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-results-ubuntu
           path: |
@@ -137,18 +137,18 @@ jobs:
       
       - name: Upload build artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-ubuntu
           path: build-ubuntu.7z
-          compression-level: 0
+          archive: false
 
   build-macos:
     name: macOS 15 (ARM)
     runs-on: macos-15
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Build Irrlicht static library
         run: |
@@ -191,7 +191,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-results-macos
           path: |
@@ -211,18 +211,18 @@ jobs:
       
       - name: Upload build artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-macos
           path: build-macos.7z
-          compression-level: 0
+          archive: false
 
   build-macos-intel:
     name: macOS 15 (Intel x86_64)
     runs-on: macos-15-intel
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Build Irrlicht static library
         run: |
@@ -265,7 +265,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-results-macos-intel
           path: |
@@ -285,8 +285,8 @@ jobs:
       
       - name: Upload build artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-macos-intel
           path: build-macos-intel.7z
-          compression-level: 0
+          archive: false

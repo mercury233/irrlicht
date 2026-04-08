@@ -350,7 +350,7 @@ bool CGUIListBox::OnEvent(const SEvent& event)
 				LastKeyTime = now;
 
 				// find the selected item, starting at the current selection
-				s32 oldSelected = Selected;
+				const s32 start = Selected;
 				// dont change selection if the key buffer matches the current item
 				if (Selected > -1 && KeyBuffer.size() > 1)
 				{
@@ -360,23 +360,44 @@ bool CGUIListBox::OnEvent(const SEvent& event)
 				}
 
 				s32 current;
-				for (u32 i = 0; i < Items.size(); ++i)
+				for (current = start+1; current < (s32)Items.size(); ++current)
 				{
-					current = (oldSelected + 1 + i) % Items.size();
-					if (Items[current].Text.size() >= KeyBuffer.size() &&
-						KeyBuffer.equals_ignore_case(Items[current].Text.subString(0,KeyBuffer.size())))
+					if (Items[current].Text.size() >= KeyBuffer.size())
 					{
-						setSelected(current);
-						if (Parent && oldSelected != current && !Selecting && !MoveOverSelect)
+						if (KeyBuffer.equals_ignore_case(Items[current].Text.subString(0,KeyBuffer.size())))
 						{
-							SEvent e;
-							e.EventType = EET_GUI_EVENT;
-							e.GUIEvent.Caller = this;
-							e.GUIEvent.Element = 0;
-							e.GUIEvent.EventType = EGET_LISTBOX_CHANGED;
-							Parent->OnEvent(e);
+							setSelected(current);
+							if (Parent && start != current && !Selecting && !MoveOverSelect)
+							{
+								SEvent e;
+								e.EventType = EET_GUI_EVENT;
+								e.GUIEvent.Caller = this;
+								e.GUIEvent.Element = 0;
+								e.GUIEvent.EventType = EGET_LISTBOX_CHANGED;
+								Parent->OnEvent(e);
+							}
+							return true;
 						}
-						return true;
+					}
+				}
+				for (current = 0; current <= start; ++current)
+				{
+					if (Items[current].Text.size() >= KeyBuffer.size())
+					{
+						if (KeyBuffer.equals_ignore_case(Items[current].Text.subString(0,KeyBuffer.size())))
+						{
+							setSelected(current);
+							if (Parent && start != current && !Selecting && !MoveOverSelect)
+							{
+								SEvent e;
+								e.EventType = EET_GUI_EVENT;
+								e.GUIEvent.Caller = this;
+								e.GUIEvent.Element = 0;
+								e.GUIEvent.EventType = EGET_LISTBOX_CHANGED;
+								Parent->OnEvent(e);
+							}
+							return true;
+						}
 					}
 				}
 

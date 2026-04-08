@@ -1,3 +1,9 @@
+.DS_Store
+Thumbs.db
+
+/bin/*/*
+/lib/*/*
+!/bin/*/readme.txt
+!/lib/*/readme.txt
+
 /premake*.lua
-/bin/Win64-VisualStudio/*
-/lib/Win64-visualStudio/*

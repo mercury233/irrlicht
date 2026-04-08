@@ -566,7 +566,7 @@ namespace video
 
 		driver->setRenderTarget(target); // set render target
 		// .. draw stuff here
-		driver->setRenderTarget(0); // set previous render target
+		driver->setRenderTarget(0); // set default render target
 		\endcode
 		Please note that you cannot render 3D or 2D geometry with a
 		render target as texture on it when you are rendering the scene
@@ -574,9 +574,8 @@ namespace video
 		possible to render into a texture between the
 		IVideoDriver::beginScene() and endScene() method calls.
 		\param texture New render target. Must be a texture created with
-		IVideoDriver::addRenderTargetTexture(). If set to 0, it sets
-		the previous render target which was set before the last
-		setRenderTarget() call.
+		IVideoDriver::addRenderTargetTexture(). If set to 0 it sets the 
+		default renderbuffer (window/framebuffer).
 		\param clearBackBuffer Clears the backbuffer of the render
 		target with the color parameter
 		\param clearZBuffer Clears the zBuffer of the rendertarget.

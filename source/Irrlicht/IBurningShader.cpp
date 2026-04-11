@@ -681,12 +681,12 @@ static inline void BL_textureWrap(sVec2& uv, const SMaterialLayer& texObj)
 }
 
 
-//MINSS Return Minimum Scalar Single-Precision Floating-Point Value
+//MINSS - Return Minimum Scalar Single-Precision Floating-Point Value
 static inline float _minss(const float a, const float b) {
 	return a < b ? a : b;
 }
 
-//MAXSS — Return Maximum Scalar Single-Precision Floating-Point Value
+//MAXSS - Return Maximum Scalar Single-Precision Floating-Point Value
 static inline float _maxss(const float a, const float b) {
 	return a > b ? a : b;
 }

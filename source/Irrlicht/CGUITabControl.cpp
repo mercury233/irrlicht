@@ -792,7 +792,9 @@ void CGUITabControl::recalculateScrollBar()
 	if (!UpButton || !DownButton)
 		return;
 
-	ScrollControl = needScrollControl() || CurrentScrollTabIndex > 0;
+	ScrollControl = needScrollControl();
+	if (!ScrollControl)
+		CurrentScrollTabIndex = 0;
 
 	if (ScrollControl)
 	{

@@ -1,5 +1,7 @@
 --------------------------
 Changes in 1.8.6
+- Bugfix: CGUITabControl can hide control buttons again when resizing element while it was scrolled already
+  Thanks @Mercury233 for the patch (#332 - 6)
 - Bugfix: IrrlichtDevice::isWindowMinimized no longer returns true when it's maximized on Windows.
 - Fix CGUIButton showing wrong pressed image when setImage was called twice with different textures.
   Thanks @Mercury233 for the patch (#332 - 3)

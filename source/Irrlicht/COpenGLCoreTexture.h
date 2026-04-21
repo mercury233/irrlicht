@@ -51,13 +51,13 @@ public:
 	};
 
 	COpenGLCoreTexture(const io::path& name, const core::array<IImage*>& images, E_TEXTURE_TYPE type, TOpenGLDriver* driver) : ITexture(name, type), Driver(driver), TextureType(GL_TEXTURE_2D),
-		TextureName(0), InternalFormat(GL_RGBA), PixelFormat(GL_RGBA), PixelType(GL_UNSIGNED_BYTE), Converter(0), LockReadOnly(false), LockImage(0), LockLayer(0),
+		TextureName(0), InternalFormat(GL_RGBA), PixelFormat(GL_RGBA), PixelType(GL_UNSIGNED_BYTE), Converter(0), MultiSamples(0), LockReadOnly(false), LockImage(0), LockLayer(0),
 		KeepImage(false), MipLevelStored(0), LegacyAutoGenerateMipMaps(false)
 	{
 		IRR_DEBUG_BREAK_IF(images.size() == 0)
 
 		DriverType = Driver->getDriverType();
-		TextureType = TextureTypeIrrToGL(Type);
+		TextureType = TextureTypeIrrToGL(Type, MultiSamples);
 		HasMipMaps = Driver->getTextureCreationFlag(ETCF_CREATE_MIP_MAPS);
 		KeepImage = Driver->getTextureCreationFlag(ETCF_ALLOW_MEMORY_COPY);
 
@@ -151,14 +151,15 @@ public:
 		Driver->testGLError(__LINE__);
 	}
 
-	COpenGLCoreTexture(const io::path& name, const core::dimension2d<u32>& size, E_TEXTURE_TYPE type, ECOLOR_FORMAT format, TOpenGLDriver* driver)
+	COpenGLCoreTexture(const io::path& name, const core::dimension2d<u32>& size, E_TEXTURE_TYPE type, ECOLOR_FORMAT format, u32 multiSamples, TOpenGLDriver* driver)
 		: ITexture(name, type),
 		Driver(driver), TextureType(GL_TEXTURE_2D),
-		TextureName(0), InternalFormat(GL_RGBA), PixelFormat(GL_RGBA), PixelType(GL_UNSIGNED_BYTE), Converter(0), LockReadOnly(false), LockImage(0), LockLayer(0), KeepImage(false),
+		TextureName(0), InternalFormat(GL_RGBA), PixelFormat(GL_RGBA), PixelType(GL_UNSIGNED_BYTE), Converter(0),
+		MultiSamples(multiSamples), LockReadOnly(false), LockImage(0), LockLayer(0), KeepImage(false),
 		MipLevelStored(0), LegacyAutoGenerateMipMaps(false)
 	{
 		DriverType = Driver->getDriverType();
-		TextureType = TextureTypeIrrToGL(Type);
+		TextureType = TextureTypeIrrToGL(Type, MultiSamples);
 		HasMipMaps = false;
 		IsRenderTarget = true;
 
@@ -184,22 +185,32 @@ public:
 		const COpenGLCoreTexture* prevTexture = Driver->getCacheHandler()->getTextureCache().get(0);
 		Driver->getCacheHandler()->getTextureCache().set(0, this);
 
-		glTexParameteri(TextureType, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(TextureType, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(TextureType, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(TextureType, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(TextureType, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-		StatesCache.WrapU = ETC_CLAMP_TO_EDGE;
-		StatesCache.WrapV = ETC_CLAMP_TO_EDGE;
-		StatesCache.WrapW = ETC_CLAMP_TO_EDGE;
-
-		switch (Type)
+		if ( TextureType != GL_TEXTURE_2D_MULTISAMPLE ) 
 		{
-		case ETT_2D:
+			glTexParameteri(TextureType, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(TextureType, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(TextureType, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(TextureType, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			glTexParameteri(TextureType, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+			StatesCache.WrapU = ETC_CLAMP_TO_EDGE;
+			StatesCache.WrapV = ETC_CLAMP_TO_EDGE;
+			StatesCache.WrapW = ETC_CLAMP_TO_EDGE;
+		}
+
+		switch (TextureType)
+		{
+		case GL_TEXTURE_2D:
 			glTexImage2D(GL_TEXTURE_2D, 0, InternalFormat, Size.Width, Size.Height, 0, PixelFormat, PixelType, 0);
 			break;
-		case ETT_CUBEMAP:
+		case GL_TEXTURE_2D_MULTISAMPLE:
+		{
+			Driver->testGLError(__LINE__);
+			const GLboolean fixedsamplelocations = GL_TRUE;
+			Driver->irrGlTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, (GLsizei)MultiSamples, InternalFormat, Size.Width, Size.Height, fixedsamplelocations);
+			Driver->testGLError(__LINE__);
+			break;
+		}
+		case GL_TEXTURE_CUBE_MAP:
 			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, InternalFormat, Size.Width, Size.Height, 0, PixelFormat, PixelType, 0);
 			glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, InternalFormat, Size.Width, Size.Height, 0, PixelFormat, PixelType, 0);
 			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, InternalFormat, Size.Width, Size.Height, 0, PixelFormat, PixelType, 0);
@@ -266,15 +277,7 @@ public:
 				Driver->getCacheHandler()->getTextureCache().set(0, this);
 				Driver->testGLError(__LINE__);
 
-				GLenum tmpTextureType = TextureType;
-
-				if (tmpTextureType == GL_TEXTURE_CUBE_MAP)
-				{
-					IRR_DEBUG_BREAK_IF(layer > 5)
-
-					tmpTextureType = GL_TEXTURE_CUBE_MAP_POSITIVE_X + layer;
-				}
-
+				GLenum tmpTextureType = getOpenGLTextureTarget(layer);
 				glGetTexImage(tmpTextureType, MipLevelStored, PixelFormat, PixelType, tmpImage->getData());
 				Driver->testGLError(__LINE__);
 
@@ -449,6 +452,17 @@ public:
 		return TextureType;
 	}
 
+	GLenum getOpenGLTextureTarget(u32 layer=0) const
+	{
+		if (TextureType == GL_TEXTURE_CUBE_MAP)
+		{
+			IRR_DEBUG_BREAK_IF(layer > 5)
+
+			return GL_TEXTURE_CUBE_MAP_POSITIVE_X + layer;
+		}
+		return TextureType;
+	}
+	
 	GLuint getOpenGLTextureName() const
 	{
 		return TextureName;
@@ -570,14 +584,7 @@ protected:
 		u32 width = Size.Width >> level;
 		u32 height = Size.Height >> level;
 
-		GLenum tmpTextureType = TextureType;
-
-		if (tmpTextureType == GL_TEXTURE_CUBE_MAP)
-		{
-			IRR_DEBUG_BREAK_IF(layer > 5)
-
-			tmpTextureType = GL_TEXTURE_CUBE_MAP_POSITIVE_X + layer;
-		}
+		GLenum tmpTextureType = getOpenGLTextureTarget(layer);
 
 		if (!IImage::isCompressedFormat(ColorFormat))
 		{
@@ -630,12 +637,15 @@ protected:
 		}
 	}
 
-	GLenum TextureTypeIrrToGL(E_TEXTURE_TYPE type) const
+	GLenum TextureTypeIrrToGL(E_TEXTURE_TYPE type, u32 multiSamples) const
 	{
 		switch ( type)
 		{
 		case ETT_2D:
-			return GL_TEXTURE_2D;
+			if ( multiSamples == 0 )
+				return GL_TEXTURE_2D;
+			else
+				return GL_TEXTURE_2D_MULTISAMPLE;
 		case ETT_CUBEMAP:
 			return GL_TEXTURE_CUBE_MAP;
 		}
@@ -653,6 +663,7 @@ protected:
 	GLenum PixelType;
 	void (*Converter)(const void*, u32, void*);
 
+	u32 MultiSamples;
 	bool LockReadOnly;
 	IImage* LockImage;
 	u32 LockLayer;

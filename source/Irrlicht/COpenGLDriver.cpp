@@ -3802,7 +3802,7 @@ IVideoDriver* COpenGLDriver::getVideoDriver()
 
 
 ITexture* COpenGLDriver::addRenderTargetTexture(const core::dimension2d<u32>& size,
-	const io::path& name, const ECOLOR_FORMAT format)
+	const io::path& name, const ECOLOR_FORMAT format, u32 multiSamples)
 {
 	if ( IImage::isCompressedFormat(format) )
 		return 0;
@@ -3821,7 +3821,7 @@ ITexture* COpenGLDriver::addRenderTargetTexture(const core::dimension2d<u32>& si
 		destSize = destSize.getOptimalSize((size == size.getOptimalSize()), false, false);
 	}
 
-	COpenGLTexture* renderTargetTexture = new COpenGLTexture(name, destSize, ETT_2D, format, this);
+	COpenGLTexture* renderTargetTexture = new COpenGLTexture(name, destSize, ETT_2D, format, multiSamples, this);
 	addTexture(renderTargetTexture);
 	renderTargetTexture->drop();
 
@@ -3852,7 +3852,7 @@ ITexture* COpenGLDriver::addRenderTargetTextureCubemap(const irr::u32 sideLen, c
 		destSize = destSize.getOptimalSize((size == size.getOptimalSize()), false, false);
 	}
 
-	COpenGLTexture* renderTargetTexture = new COpenGLTexture(name, destSize, ETT_CUBEMAP, format, this);
+	COpenGLTexture* renderTargetTexture = new COpenGLTexture(name, destSize, ETT_CUBEMAP, format, 0, this);
 	addTexture(renderTargetTexture);
 	renderTargetTexture->drop();
 

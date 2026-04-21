@@ -193,7 +193,8 @@ public:
 					if (textureID != 0)
 					{
 						AssignedTextures[i] = GL_COLOR_ATTACHMENT0 + i;
-						GLenum textarget = currentTexture->getType() == ETT_2D ? GL_TEXTURE_2D : GL_TEXTURE_CUBE_MAP_POSITIVE_X + (int)CubeSurfaces[i];
+
+						GLenum textarget = currentTexture->getOpenGLTextureTarget(CubeSurfaces.empty() ? 0 : (u32)CubeSurfaces[i]);
 						Driver->irrGlFramebufferTexture2D(GL_FRAMEBUFFER, AssignedTextures[i], textarget, textureID, 0);
 #ifdef _DEBUG
 						Driver->testGLError(__LINE__);
@@ -202,7 +203,7 @@ public:
 					else if (AssignedTextures[i] != GL_NONE)
 					{
 						AssignedTextures[i] = GL_NONE;
-						Driver->irrGlFramebufferTexture2D(GL_FRAMEBUFFER, AssignedTextures[i], GL_TEXTURE_2D, 0, 0);
+						Driver->irrGlFramebufferTexture2D(GL_FRAMEBUFFER, AssignedTextures[i], currentTexture->getOpenGLTextureTarget(), 0, 0);
 
 						os::Printer::log("Error: Could not set render target.", ELL_ERROR);
 					}
@@ -316,6 +317,13 @@ public:
 		}
 
 		return 0;
+	}
+
+	virtual SExposedRenderTargetData getExposedRenderTargetData() const IRR_OVERRIDE
+	{
+		SExposedRenderTargetData data;
+		data.OpenGL.FramebufferName = BufferID;
+		return data;
 	}
 
 protected:

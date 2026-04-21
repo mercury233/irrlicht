@@ -1,5 +1,6 @@
 --------------------------
 Changes in 1.9 (not yet released)
+- Add support to create multisample render target textures in OpenGL (>= 3.2)
 - Fix loading JCS_CMYK/JCS_YCCK jpg's switching red/blue. Thanks @Mercury233 for patch (#332 - 5)
 - Fix compiling on devc++ 4.9.9.2. Thanks @ Noiecity for patch: https://irrlicht.sourceforge.io/forum/viewtopic.php?p=308983
 - Fix macOS special keys and Command shortcuts handling. Thanks @Mercury233 for patch (#331 - 15)

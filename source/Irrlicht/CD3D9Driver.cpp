@@ -3237,7 +3237,7 @@ IVideoDriver* CD3D9Driver::getVideoDriver()
 //! Creates a render target texture.
 ITexture* CD3D9Driver::addRenderTargetTexture(const core::dimension2d<u32>& size,
 											  const io::path& name,
-											  const ECOLOR_FORMAT format)
+											  const ECOLOR_FORMAT format, u32 multiSamples)
 {
 	if ( IImage::isCompressedFormat(format) )
 		return 0;

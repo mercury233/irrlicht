@@ -231,13 +231,15 @@ public:
 
 				if (IImage::isDepthFormat(textureFormat))
 				{
-					GLuint textureID = static_cast<TOpenGLTexture*>(DepthStencil)->getOpenGLTextureName();
+					TOpenGLTexture* currentDepthStencil = static_cast<TOpenGLTexture*>(DepthStencil);
+					GLenum depthStencilTexTarget = currentDepthStencil->getOpenGLTextureTarget();
+					GLuint textureID = currentDepthStencil->getOpenGLTextureName();
 
-					Driver->irrGlFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, textureID, 0);
+					Driver->irrGlFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthStencilTexTarget, textureID, 0);
 
 					if (textureFormat == ECF_D24S8)
 					{
-						Driver->irrGlFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, textureID, 0);
+						Driver->irrGlFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, depthStencilTexTarget, textureID, 0);
 
 						AssignedStencil = true;
 					}

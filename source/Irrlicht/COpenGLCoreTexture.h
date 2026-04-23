@@ -51,13 +51,13 @@ public:
 	};
 
 	COpenGLCoreTexture(const io::path& name, const core::array<IImage*>& images, E_TEXTURE_TYPE type, TOpenGLDriver* driver) : ITexture(name, type), Driver(driver), TextureType(GL_TEXTURE_2D),
-		TextureName(0), InternalFormat(GL_RGBA), PixelFormat(GL_RGBA), PixelType(GL_UNSIGNED_BYTE), Converter(0), MultiSamples(0), LockReadOnly(false), LockImage(0), LockLayer(0),
+		TextureName(0), InternalFormat(GL_RGBA), PixelFormat(GL_RGBA), PixelType(GL_UNSIGNED_BYTE), Converter(0), LockReadOnly(false), LockImage(0), LockLayer(0),
 		KeepImage(false), MipLevelStored(0), LegacyAutoGenerateMipMaps(false)
 	{
 		IRR_DEBUG_BREAK_IF(images.size() == 0)
 
 		DriverType = Driver->getDriverType();
-		TextureType = TextureTypeIrrToGL(Type, MultiSamples);
+		TextureType = TextureTypeIrrToGL(Type, MultiSamples); // MultiSamples currently always 0 here, if it's ever needed we can pass it also to constructor
 		HasMipMaps = Driver->getTextureCreationFlag(ETCF_CREATE_MIP_MAPS);
 		KeepImage = Driver->getTextureCreationFlag(ETCF_ALLOW_MEMORY_COPY);
 
@@ -155,10 +155,11 @@ public:
 		: ITexture(name, type),
 		Driver(driver), TextureType(GL_TEXTURE_2D),
 		TextureName(0), InternalFormat(GL_RGBA), PixelFormat(GL_RGBA), PixelType(GL_UNSIGNED_BYTE), Converter(0),
-		MultiSamples(multiSamples), LockReadOnly(false), LockImage(0), LockLayer(0), KeepImage(false),
+		LockReadOnly(false), LockImage(0), LockLayer(0), KeepImage(false),
 		MipLevelStored(0), LegacyAutoGenerateMipMaps(false)
 	{
 		DriverType = Driver->getDriverType();
+		MultiSamples = multiSamples;
 		TextureType = TextureTypeIrrToGL(Type, MultiSamples);
 		HasMipMaps = false;
 		IsRenderTarget = true;
@@ -663,7 +664,6 @@ protected:
 	GLenum PixelType;
 	void (*Converter)(const void*, u32, void*);
 
-	u32 MultiSamples;
 	bool LockReadOnly;
 	IImage* LockImage;
 	u32 LockLayer;

@@ -105,10 +105,10 @@ public:
 
 		// define vertices array
 
-		Vertices[0] = irr::video::S3DVertex(-1.0f, -1.0f, 0.0f, 1, 1, 0, irr::video::SColor(0,255,255,255), 0.0f, 1.0f);
-		Vertices[1] = irr::video::S3DVertex(-1.0f,  1.0f, 0.0f, 1, 1, 0, irr::video::SColor(0,255,255,255), 0.0f, 0.0f);
-		Vertices[2] = irr::video::S3DVertex( 1.0f,  1.0f, 0.0f, 1, 1, 0, irr::video::SColor(0,255,255,255), 1.0f, 0.0f);
-		Vertices[3] = irr::video::S3DVertex( 1.0f, -1.0f, 0.0f, 1, 1, 0, irr::video::SColor(0,255,255,255), 1.0f, 1.0f);
+		Vertices[0] = irr::video::S3DVertex(-1.0f, -1.0f, 0.0f, 0, 0, 1, irr::video::SColor(0,255,255,255), 0.0f, 1.0f);
+		Vertices[1] = irr::video::S3DVertex(-1.0f,  1.0f, 0.0f, 0, 0, 1, irr::video::SColor(0,255,255,255), 0.0f, 0.0f);
+		Vertices[2] = irr::video::S3DVertex( 1.0f,  1.0f, 0.0f, 0, 0, 1, irr::video::SColor(0,255,255,255), 1.0f, 0.0f);
+		Vertices[3] = irr::video::S3DVertex( 1.0f, -1.0f, 0.0f, 0, 0, 1, irr::video::SColor(0,255,255,255), 1.0f, 1.0f);
 
 		// define indices for triangles
 

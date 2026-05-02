@@ -704,7 +704,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (dev)
 		{
 			dev->postEventFromUser(event);
-			syncIMEState(hWnd);
+			if (couldChangeFocus)
+				syncIMEState(hWnd);
 
 			if ( event.MouseInput.Event >= irr::EMIE_LMOUSE_PRESSED_DOWN && event.MouseInput.Event <= irr::EMIE_MMOUSE_PRESSED_DOWN )
 			{

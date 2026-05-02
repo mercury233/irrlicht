@@ -70,6 +70,7 @@ class COpenGLCoreCacheHandler
 
 			if (index < MATERIAL_MAX_TEXTURES && index < TextureCount)
 			{
+				// CacheHandler.Driver->testGLError(__LINE__); // useful when debugging new features
 				if ( esa == EST_ACTIVE_ALWAYS )
 					CacheHandler.setActiveTexture(GL_TEXTURE0 + index);
 
@@ -97,13 +98,20 @@ class COpenGLCoreCacheHandler
 								glBindTexture(prevTextureType, 0);
 
 #if ( defined(IRR_COMPILE_GL_COMMON) || defined(IRR_COMPILE_GLES_COMMON) )
-								glDisable(prevTextureType);
-								glEnable(curTextureType);
+								// Note: I exclude GL_TEXTURE_2D_MULTISAMPLE in all glEnable/glDisable calls because they cause GL_INVALID_VALUE errors
+								//       But I'm not sure which other types really needed this, like does this work correc with cubemaps?
+								if ( prevTextureType != GL_TEXTURE_2D_MULTISAMPLE )
+									glDisable(prevTextureType);
+								if ( curTextureType != GL_TEXTURE_2D_MULTISAMPLE )
+									glEnable(curTextureType);
 #endif
 							}
 #if ( defined(IRR_COMPILE_GL_COMMON) || defined(IRR_COMPILE_GLES_COMMON) )
 							else if (!prevTexture)
-								glEnable(curTextureType);
+							{
+								if ( curTextureType != GL_TEXTURE_2D_MULTISAMPLE )
+									glEnable(curTextureType);
+							}
 #endif
 
 							glBindTexture(curTextureType, static_cast<const TOpenGLTexture*>(texture)->getOpenGLTextureName());
@@ -123,7 +131,8 @@ class COpenGLCoreCacheHandler
 						glBindTexture(prevTextureType, 0);
 
 #if ( defined(IRR_COMPILE_GL_COMMON) || defined(IRR_COMPILE_GLES_COMMON) )
-						glDisable(prevTextureType);
+						if ( prevTextureType != GL_TEXTURE_2D_MULTISAMPLE )
+							glDisable(prevTextureType);
 #endif
 					}
 
@@ -134,6 +143,7 @@ class COpenGLCoreCacheHandler
 				}
 
 				status = true;
+				// CacheHandler.Driver->testGLError(__LINE__); // useful when debugging new features
 			}
 
 			return (status && type == DriverType);

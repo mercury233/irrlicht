@@ -4575,7 +4575,7 @@ ECOLOR_FORMAT CBurningVideoDriver::getColorFormat() const
 
 //! Creates a render target texture.
 ITexture* CBurningVideoDriver::addRenderTargetTexture(const core::dimension2d<u32>& size,
-	const io::path& name, const ECOLOR_FORMAT format
+	const io::path& name, const ECOLOR_FORMAT format, u32 multiSamples
 #if defined(PATCH_SUPERTUX_8_0_1_with_1_9_0)
 	, const bool useStencil
 #endif

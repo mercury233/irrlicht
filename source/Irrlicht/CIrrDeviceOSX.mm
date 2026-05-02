@@ -685,7 +685,7 @@ namespace irr
 {
 //! constructor
 CIrrDeviceMacOSX::CIrrDeviceMacOSX(const SIrrlichtCreationParameters& param)
-	: CIrrDeviceStub(param), Window(NULL), Display(NULL),
+	: CIrrDeviceStub(param), Window(NULL), Display(0),
 	DeviceWidth(0), DeviceHeight(0),
 	ScreenWidth(0), ScreenHeight(0), MouseButtonStates(0),
 	IsActive(true), IsFullscreen(false), IsShiftDown(false), IsControlDown(false), IsResizable(false),
@@ -1323,7 +1323,7 @@ bool CIrrDeviceMacOSX::run()
 
 	[Pool release];
 
-	return (![[NSApp delegate] isQuit] && IsActive);
+	return (![(CIrrDelegateOSX *)[NSApp delegate] isQuit] && IsActive);
 }
 
 

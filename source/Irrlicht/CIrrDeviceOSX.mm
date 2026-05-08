@@ -1819,14 +1819,21 @@ void CIrrDeviceMacOSX::minimizeWindow()
 //! Maximizes the window if possible.
 void CIrrDeviceMacOSX::maximizeWindow()
 {
-	// todo: implement
+	if (Window != NULL && ![Window isZoomed])
+		[Window zoom:nil];
 }
 
 
-//! get the window to normal size if possible.
+//! Sets the window to normal size if possible.
 void CIrrDeviceMacOSX::restoreWindow()
 {
-	[Window deminiaturize:[NSApp self]];
+	if (Window != NULL)
+	{
+		if ([Window isMiniaturized])
+			[Window deminiaturize:[NSApp self]];
+		if ([Window isZoomed])
+			[Window zoom:nil];
+	}
 }
     
 //! Sets the size of the window in windowed mode.

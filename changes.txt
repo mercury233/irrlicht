@@ -1,5 +1,7 @@
 --------------------------
 Changes in 1.9 (not yet released)
+- Implement CIrrDeviceMacOSX::maximizeWindow. Thanks @Mercury233 for patch (#333 - 2)
+- Fix CIrrDeviceMacOSX::restoreWindow. Thanks @Mercury233 for patch (#333 - 2)
 - Add CIrrDeviceMacOSX::setWindowSize. Thanks @Mercury233 for patch (#333 - 1)
 - Add support to create multisample render target textures in OpenGL (>= 3.2)
 - Fix loading JCS_CMYK/JCS_YCCK jpg's switching red/blue. Thanks @Mercury233 for patch (#332 - 5)

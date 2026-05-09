@@ -93,6 +93,9 @@ namespace irr
         //! Get the position of this window on screen
         virtual core::position2di getWindowPosition() IRR_OVERRIDE;
 
+		//! Set the size of the window in windowed mode
+		virtual void setWindowSize(const irr::core::dimension2d<u32>& size) IRR_OVERRIDE;
+
 		//! Activate any joysticks, and generate events for them.
 		virtual bool activateJoysticks(core::array<SJoystickInfo> & joystickInfo) IRR_OVERRIDE;
 

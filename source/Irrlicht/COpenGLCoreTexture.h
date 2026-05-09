@@ -186,7 +186,9 @@ public:
 		const COpenGLCoreTexture* prevTexture = Driver->getCacheHandler()->getTextureCache().get(0);
 		Driver->getCacheHandler()->getTextureCache().set(0, this);
 
+#ifdef GL_VERSION_3_2
 		if ( TextureType != GL_TEXTURE_2D_MULTISAMPLE ) 
+#endif
 		{
 			glTexParameteri(TextureType, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 			glTexParameteri(TextureType, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -203,6 +205,7 @@ public:
 		case GL_TEXTURE_2D:
 			glTexImage2D(GL_TEXTURE_2D, 0, InternalFormat, Size.Width, Size.Height, 0, PixelFormat, PixelType, 0);
 			break;
+#ifdef GL_VERSION_3_2
 		case GL_TEXTURE_2D_MULTISAMPLE:
 		{
 			Driver->testGLError(__LINE__);
@@ -211,6 +214,7 @@ public:
 			Driver->testGLError(__LINE__);
 			break;
 		}
+#endif
 		case GL_TEXTURE_CUBE_MAP:
 			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, InternalFormat, Size.Width, Size.Height, 0, PixelFormat, PixelType, 0);
 			glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, InternalFormat, Size.Width, Size.Height, 0, PixelFormat, PixelType, 0);
@@ -645,8 +649,10 @@ protected:
 		case ETT_2D:
 			if ( multiSamples == 0 )
 				return GL_TEXTURE_2D;
+#ifdef GL_VERSION_3_2
 			else
 				return GL_TEXTURE_2D_MULTISAMPLE;
+#endif
 		case ETT_CUBEMAP:
 			return GL_TEXTURE_CUBE_MAP;
 		}

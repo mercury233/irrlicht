@@ -563,6 +563,39 @@ SEnvMapper* getEnvMapperFromHWnd(HWND hWnd)
 	return 0;
 }
 
+void syncIMEState(HWND hWnd)
+{
+	SEnvMapper* envMapper = getEnvMapperFromHWnd(hWnd);
+	if (!envMapper || !envMapper->irrDev)
+		return;
+
+	irr::CIrrDeviceWin32* dev = envMapper->irrDev;
+	irr::gui::IGUIEnvironment* guienv = dev->getGUIEnvironment();
+	irr::gui::IGUIElement* ele = guienv ? guienv->getFocus() : 0;
+	const bool enable = (ele && ele->getType() == irr::gui::EGUIET_EDIT_BOX && ele->isEnabled());
+
+	if (enable == envMapper->imeEnabled)
+		return;
+
+	if (!enable)
+	{
+		HIMC hIMC = ImmGetContext(hWnd);
+		if (hIMC)
+		{
+			ImmNotifyIME(hIMC, NI_COMPOSITIONSTR, CPS_CANCEL, 0);
+			ImmReleaseContext(hWnd, hIMC);
+		}
+		ImmAssociateContextEx(hWnd, NULL, 0);
+		envMapper->imeComposing = false;
+	}
+	else
+	{
+		ImmAssociateContextEx(hWnd, NULL, IACE_DEFAULT);
+	}
+
+	envMapper->imeEnabled = enable;
+}
+
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -587,32 +620,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		message == WM_LBUTTONDOWN || message == WM_RBUTTONDOWN || message == WM_MBUTTONDOWN ||
 		message == WM_KEYDOWN || message == WM_KEYUP ||
 		message == WM_SYSKEYDOWN || message == WM_SYSKEYUP);
-	SEnvMapper* envMapper = getEnvMapperFromHWnd(hWnd);
-	if (couldChangeFocus && envMapper && envMapper->irrDev)
+	if (couldChangeFocus)
 	{
-		dev = envMapper->irrDev;
-		irr::gui::IGUIEnvironment* guienv = dev->getGUIEnvironment();
-		irr::gui::IGUIElement* ele = guienv ? guienv->getFocus() : 0;
-		bool enable = (ele && ele->getType() == irr::gui::EGUIET_EDIT_BOX && ele->isEnabled());
-
-		if (enable != envMapper->imeEnabled)
-		{
-			if (!enable)
-			{
-				HIMC hIMC = ImmGetContext(hWnd);
-				if (hIMC)
-				{
-					ImmNotifyIME(hIMC, NI_COMPOSITIONSTR, CPS_CANCEL, 0);
-					ImmReleaseContext(hWnd, hIMC);
-				}
-				ImmAssociateContextEx(hWnd, NULL, 0);
-				envMapper->imeComposing = false;
-			}
-			else
-				ImmAssociateContextEx(hWnd, NULL, IACE_DEFAULT);
-
-			envMapper->imeEnabled = enable;
-		}
+		syncIMEState(hWnd);
 		dev = 0;	// reset; will be looked up again per-case below
 	}
 
@@ -694,6 +704,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (dev)
 		{
 			dev->postEventFromUser(event);
+			if (couldChangeFocus)
+				syncIMEState(hWnd);
 
 			if ( event.MouseInput.Event >= irr::EMIE_LMOUSE_PRESSED_DOWN && event.MouseInput.Event <= irr::EMIE_MMOUSE_PRESSED_DOWN )
 			{

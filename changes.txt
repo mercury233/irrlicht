@@ -1,5 +1,6 @@
 --------------------------
 Changes in 1.9 (not yet released)
+- Update macOS fullscreen handling. Thanks @Mercury233 for patch (#333 - 3)
 - Implement CIrrDeviceMacOSX::maximizeWindow. Thanks @Mercury233 for patch (#333 - 2)
 - Fix CIrrDeviceMacOSX::restoreWindow. Thanks @Mercury233 for patch (#333 - 2)
 - Add CIrrDeviceMacOSX::setWindowSize. Thanks @Mercury233 for patch (#333 - 1)

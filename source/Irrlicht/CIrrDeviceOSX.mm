@@ -1520,6 +1520,24 @@ void CIrrDeviceMacOSX::restoreWindow()
 	[Window deminiaturize:[NSApp self]];
 }
     
+//! Sets the size of the window in windowed mode.
+void CIrrDeviceMacOSX::setWindowSize(const irr::core::dimension2d<u32>& size)
+{
+	if (!Window || IsFullscreen || CreationParams.DriverType == video::EDT_NULL)
+		return;
+
+	// Compute the frame rect that yields the requested client (content) area.
+	NSRect contentRect = NSMakeRect(0, 0, (CGFloat)size.Width, (CGFloat)size.Height);
+	NSRect frameRect   = [Window frameRectForContentRect:contentRect];
+
+	// Keep the current top-left corner fixed.
+	NSRect currentFrame = [Window frame];
+	frameRect.origin.x = currentFrame.origin.x;
+	frameRect.origin.y = currentFrame.origin.y + currentFrame.size.height - frameRect.size.height;
+
+	[Window setFrame:frameRect display:YES animate:NO];
+}
+
 //! Get the position of this window on screen
 core::position2di CIrrDeviceMacOSX::getWindowPosition()
 {

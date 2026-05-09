@@ -688,7 +688,7 @@ CIrrDeviceMacOSX::CIrrDeviceMacOSX(const SIrrlichtCreationParameters& param)
 	: CIrrDeviceStub(param), Window(NULL), Display(0),
 	DeviceWidth(0), DeviceHeight(0),
 	ScreenWidth(0), ScreenHeight(0), MouseButtonStates(0),
-	IsActive(true), IsFullscreen(false), IsShiftDown(false), IsControlDown(false), IsResizable(false),
+	IsActive(true), IsShiftDown(false), IsControlDown(false), IsResizable(false),
 	SoftwareDriverTarget(nil),SoftwareRendererType(0), TextInputView(nil)
 {
 	struct utsname name;
@@ -790,10 +790,9 @@ void CIrrDeviceMacOSX::closeDevice()
 	}
 	TextInputView = nil; // owned by the window's view hierarchy, already released
     
-    if (IsFullscreen)
+    if (CreationParams.Fullscreen)
         CGReleaseAllDisplays();
 
-	IsFullscreen = false;
 	IsActive = false;
 }
 
@@ -849,8 +848,6 @@ bool CIrrDeviceMacOSX::createWindow()
     }
     else
     {
-        IsFullscreen = true;
-        
 #ifdef __MAC_10_6
         displaymode = CGDisplayCopyDisplayMode(Display);
         
@@ -946,7 +943,7 @@ bool CIrrDeviceMacOSX::createWindow()
             [TextInputView release]; // retained by the view hierarchy
         }
         
-        if (IsFullscreen) //hide menus in fullscreen mode only
+        if (isFullscreen()) //hide menus in fullscreen mode only
         {
 #ifdef __MAC_10_6
             [NSApp setPresentationOptions:(NSApplicationPresentationAutoHideDock | NSApplicationPresentationAutoHideMenuBar)];
@@ -1809,9 +1806,32 @@ bool CIrrDeviceMacOSX::isResizable() const
 }
 
 
+bool CIrrDeviceMacOSX::isFullscreen() const
+{
+	// Check for CGDisplayCapture fullscreen mode.
+	// In this mode, the user can't interact with the system menu bar, and we don't provide a way to exit fullscreen,
+	// so the display mode is locked to fullscreen.
+	if (CreationParams.Fullscreen)
+		return true;
+
+	if (Window != NULL)
+	{
+#ifdef __MAC_10_7
+		// Check for macOS Lion fullscreen mode.
+		// This mode is entered via the green window button by user.
+		// In this mode, the user can interact with the system menu bar and exit fullscreen via the green window button.
+		if ([Window styleMask] & NSFullScreenWindowMask)
+			return true;
+#endif
+	}
+
+	return false;
+}
+
+
 void CIrrDeviceMacOSX::minimizeWindow()
 {
-	if (Window != NULL)
+	if (Window != NULL && !isFullscreen())
 		[Window miniaturize:[NSApp self]];
 }
 
@@ -1819,20 +1839,28 @@ void CIrrDeviceMacOSX::minimizeWindow()
 //! Maximizes the window if possible.
 void CIrrDeviceMacOSX::maximizeWindow()
 {
-	// todo: implement
+	if (Window != NULL && !isFullscreen() && ![Window isZoomed])
+		[Window zoom:nil];
 }
 
 
-//! get the window to normal size if possible.
+//! Sets the window to normal size if possible.
 void CIrrDeviceMacOSX::restoreWindow()
 {
-	[Window deminiaturize:[NSApp self]];
+	if (Window != NULL && !isFullscreen())
+	{
+		if ([Window isMiniaturized])
+			[Window deminiaturize:[NSApp self]];
+		if ([Window isZoomed])
+			[Window zoom:nil];
+	}
 }
-    
+
+
 //! Sets the size of the window in windowed mode.
 void CIrrDeviceMacOSX::setWindowSize(const irr::core::dimension2d<u32>& size)
 {
-	if (!Window || IsFullscreen || CreationParams.DriverType == video::EDT_NULL)
+	if (!Window || isFullscreen() || [Window isZoomed] || CreationParams.DriverType == video::EDT_NULL)
 		return;
 
 	// Compute the frame rect that yields the requested client (content) area.
@@ -1846,6 +1874,7 @@ void CIrrDeviceMacOSX::setWindowSize(const irr::core::dimension2d<u32>& size)
 
 	[Window setFrame:frameRect display:YES animate:NO];
 }
+
 
 //! Get the position of this window on screen
 core::position2di CIrrDeviceMacOSX::getWindowPosition()

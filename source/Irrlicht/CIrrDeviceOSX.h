@@ -81,6 +81,9 @@ namespace irr
 		//! Returns true if the window is resizable, false if not
 		virtual bool isResizable() const;
 
+		//! Returns true if the window is in fullscreen mode
+		virtual bool isFullscreen() const IRR_OVERRIDE;
+
 		//! Minimizes the window if possible
 		virtual void minimizeWindow() IRR_OVERRIDE;
 
@@ -258,7 +261,6 @@ namespace irr
 		int ScreenHeight;
 		u32 MouseButtonStates;
         u32 SoftwareRendererType;
-        bool IsFullscreen;
 		bool IsActive;
 		bool IsShiftDown;
 		bool IsControlDown;

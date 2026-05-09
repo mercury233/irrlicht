@@ -1432,7 +1432,6 @@ void CIrrDeviceMacOSX::initKeycodes()
 	KeyCodes[kVK_ANSI_V] = irr::KEY_KEY_V;
 	KeyCodes[kVK_ANSI_W] = irr::KEY_KEY_W;
 	KeyCodes[kVK_ANSI_X] = irr::KEY_KEY_X;
-	KeyCodes[kVK_ANSI_X] = irr::KEY_KEY_X;
 	KeyCodes[kVK_ANSI_Y] = irr::KEY_KEY_Y;
 	KeyCodes[kVK_ANSI_Z] = irr::KEY_KEY_Z;
 

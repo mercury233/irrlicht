@@ -98,18 +98,25 @@ class COpenGLCoreCacheHandler
 								glBindTexture(prevTextureType, 0);
 
 #if ( defined(IRR_COMPILE_GL_COMMON) || defined(IRR_COMPILE_GLES_COMMON) )
+#ifdef GL_VERSION_3_2
 								// Note: I exclude GL_TEXTURE_2D_MULTISAMPLE in all glEnable/glDisable calls because they cause GL_INVALID_VALUE errors
-								//       But I'm not sure which other types really needed this, like does this work correc with cubemaps?
+								//       But I'm not sure which other types really needed this, like does this work correct with cubemaps?
 								if ( prevTextureType != GL_TEXTURE_2D_MULTISAMPLE )
 									glDisable(prevTextureType);
 								if ( curTextureType != GL_TEXTURE_2D_MULTISAMPLE )
 									glEnable(curTextureType);
+#else
+								glDisable(prevTextureType);
+								glEnable(curTextureType);
+#endif
 #endif
 							}
 #if ( defined(IRR_COMPILE_GL_COMMON) || defined(IRR_COMPILE_GLES_COMMON) )
 							else if (!prevTexture)
 							{
+#ifdef GL_VERSION_3_2
 								if ( curTextureType != GL_TEXTURE_2D_MULTISAMPLE )
+#endif
 									glEnable(curTextureType);
 							}
 #endif
@@ -131,7 +138,9 @@ class COpenGLCoreCacheHandler
 						glBindTexture(prevTextureType, 0);
 
 #if ( defined(IRR_COMPILE_GL_COMMON) || defined(IRR_COMPILE_GLES_COMMON) )
+#ifdef GL_VERSION_3_2
 						if ( prevTextureType != GL_TEXTURE_2D_MULTISAMPLE )
+#endif
 							glDisable(prevTextureType);
 #endif
 					}

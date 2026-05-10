@@ -2754,8 +2754,10 @@ void COpenGLDriver::setTextureRenderStates(const SMaterial& material, bool reset
 			}
 
 			const GLenum tmpType = tmpTexture->getOpenGLTextureType();
+#ifdef GL_VERSION_3_2
 			if ( tmpType == GL_TEXTURE_2D_MULTISAMPLE ) // those states are not useable by multisample textures
 					continue;
+#endif
 
 			COpenGLTexture::SStatesCache& statesCache = tmpTexture->getStatesCache();
 

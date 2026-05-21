@@ -21,9 +21,9 @@ CGUIScrollBar::CGUIScrollBar(bool horizontal, IGUIEnvironment* environment,
 				core::rect<s32> rectangle, bool noclip)
 	: IGUIScrollBar(environment, parent, id, rectangle), UpButton(0),
 	DownButton(0), Dragging(false), Horizontal(horizontal),
-	DraggedBySlider(false), TrayClick(false), Pos(0), DrawPos(0),
-	DrawHeight(0), Min(0), Max(100), SmallStep(10), LargeStep(50), DesiredPos(0),
-	LastChange(0), DrawBackground(true)
+	DraggedBySlider(false), Pos(0), DrawPos(0),
+	DrawHeight(0), Min(0), Max(100), SmallStep(10), LargeStep(50),
+	DrawBackground(true)
 {
 	#ifdef _DEBUG
 	setDebugName("CGUIScrollBar");
@@ -160,8 +160,26 @@ bool CGUIScrollBar::OnEvent(const SEvent& event)
 				{
 					Dragging = true;
 					DraggedBySlider = SliderRect.isPointInside(p);
-					TrayClick = !DraggedBySlider;
-					DesiredPos = getPosFromMousePos(p);
+					if (!DraggedBySlider)
+					{
+						const s32 desiredPos = getPosFromMousePos(p);
+						const s32 oldPos = Pos;
+						if (desiredPos >= Pos + LargeStep)
+							setPos(Pos + LargeStep);
+						else if (desiredPos <= Pos - LargeStep)
+							setPos(Pos - LargeStep);
+						else
+							setPos(desiredPos);
+						if (Pos != oldPos && Parent)
+						{
+							SEvent newEvent;
+							newEvent.EventType = EET_GUI_EVENT;
+							newEvent.GUIEvent.Caller = this;
+							newEvent.GUIEvent.Element = 0;
+							newEvent.GUIEvent.EventType = EGET_SCROLL_BAR_CHANGED;
+							Parent->OnEvent(newEvent);
+						}
+					}
 					return true;
 				}
 				break;
@@ -182,46 +200,23 @@ bool CGUIScrollBar::OnEvent(const SEvent& event)
 				if ( event.MouseInput.Event == EMIE_LMOUSE_LEFT_UP )
 					Dragging = false;
 
-				const s32 newPos = getPosFromMousePos(p);
-				const s32 oldPos = Pos;
-
-				if (!DraggedBySlider)
-				{
-					if ( isInside )
-					{
-						DraggedBySlider = SliderRect.isPointInside(p);
-						TrayClick = !DraggedBySlider;
-					}
-
-					if (DraggedBySlider)
-					{
-						setPos(newPos);
-					}
-					else
-					{
-						TrayClick = false;
-						if (event.MouseInput.Event == EMIE_MOUSE_MOVED)
-							return isInside;
-					}
-				}
+				if (!DraggedBySlider && isInside)
+					DraggedBySlider = SliderRect.isPointInside(p);
 
 				if (DraggedBySlider)
 				{
+					const s32 newPos = getPosFromMousePos(p);
+					const s32 oldPos = Pos;
 					setPos(newPos);
-				}
-				else
-				{
-					DesiredPos = newPos;
-				}
-
-				if (Pos != oldPos && Parent)
-				{
-					SEvent newEvent;
-					newEvent.EventType = EET_GUI_EVENT;
-					newEvent.GUIEvent.Caller = this;
-					newEvent.GUIEvent.Element = 0;
-					newEvent.GUIEvent.EventType = EGET_SCROLL_BAR_CHANGED;
-					Parent->OnEvent(newEvent);
+					if (Pos != oldPos && Parent)
+					{
+						SEvent newEvent;
+						newEvent.EventType = EET_GUI_EVENT;
+						newEvent.GUIEvent.Caller = this;
+						newEvent.GUIEvent.Element = 0;
+						newEvent.GUIEvent.EventType = EGET_SCROLL_BAR_CHANGED;
+						Parent->OnEvent(newEvent);
+					}
 				}
 				return isInside;
 			} break;
@@ -236,36 +231,6 @@ bool CGUIScrollBar::OnEvent(const SEvent& event)
 	}
 
 	return IGUIElement::OnEvent(event);
-}
-
-void CGUIScrollBar::OnPostRender(u32 timeMs)
-{
-	if (Dragging && !DraggedBySlider && TrayClick && timeMs > LastChange + 200)
-	{
-		LastChange = timeMs;
-
-		const s32 oldPos = Pos;
-
-		if (DesiredPos >= Pos + LargeStep)
-			setPos(Pos + LargeStep);
-		else
-		if (DesiredPos <= Pos - LargeStep)
-			setPos(Pos - LargeStep);
-		else
-		if (DesiredPos >= Pos - LargeStep && DesiredPos <= Pos + LargeStep)
-			setPos(DesiredPos);
-
-		if (Pos != oldPos && Parent)
-		{
-			SEvent newEvent;
-			newEvent.EventType = EET_GUI_EVENT;
-			newEvent.GUIEvent.Caller = this;
-			newEvent.GUIEvent.Element = 0;
-			newEvent.GUIEvent.EventType = EGET_SCROLL_BAR_CHANGED;
-			Parent->OnEvent(newEvent);
-		}
-	}
-
 }
 
 //! draws the element and its children

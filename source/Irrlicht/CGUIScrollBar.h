@@ -34,8 +34,6 @@ namespace gui
 		//! draws the element and its children
 		virtual void draw() IRR_OVERRIDE;
 
-		virtual void OnPostRender(u32 timeMs) IRR_OVERRIDE;
-
 
 		//! gets the maximum value of the scrollbar.
 		virtual s32 getMax() const IRR_OVERRIDE;
@@ -113,7 +111,6 @@ namespace gui
 		bool Dragging;
 		bool Horizontal;
 		bool DraggedBySlider;
-		bool TrayClick;
 		s32 Pos;
 		s32 DrawPos;
 		s32 DrawHeight;
@@ -121,8 +118,6 @@ namespace gui
 		s32 Max;
 		s32 SmallStep;
 		s32 LargeStep;
-		s32 DesiredPos;
-		u32 LastChange;
 		video::SColor CurrentIconColor;
 		bool DrawBackground;
 

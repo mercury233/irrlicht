@@ -164,12 +164,7 @@ bool CGUIScrollBar::OnEvent(const SEvent& event)
 					{
 						const s32 desiredPos = getPosFromMousePos(p);
 						const s32 oldPos = Pos;
-						if (desiredPos >= Pos + LargeStep)
-							setPos(Pos + LargeStep);
-						else if (desiredPos <= Pos - LargeStep)
-							setPos(Pos - LargeStep);
-						else
-							setPos(desiredPos);
+						setPos(desiredPos);
 						if (Pos != oldPos && Parent)
 						{
 							SEvent newEvent;

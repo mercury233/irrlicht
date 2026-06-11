@@ -168,7 +168,7 @@ namespace video
 
 		//! Creates a render target texture.
 		virtual ITexture* addRenderTargetTexture(const core::dimension2d<u32>& size,
-			const io::path& name, const ECOLOR_FORMAT format = ECF_UNKNOWN
+			const io::path& name, const ECOLOR_FORMAT format = ECF_UNKNOWN, u32 multiSamples=0
 #if defined(PATCH_SUPERTUX_8_0_1_with_1_9_0)
 			, const bool useStencil = false
 #endif

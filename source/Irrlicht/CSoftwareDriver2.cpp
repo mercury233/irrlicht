@@ -1363,7 +1363,7 @@ static u32 clipToHyperPlane(
 	*/
 
 	// polygon scan conversion edge sharing opposite side?
-	//Sutherland–Hodgman
+	//Sutherland-Hodgman
 	for (u32 i = 0; i < inCount; ++i)
 	{
 		a = source + (i == inCount - 1 ? 0 : s4DVertex_ofs(i + 1));
@@ -4575,7 +4575,7 @@ ECOLOR_FORMAT CBurningVideoDriver::getColorFormat() const
 
 //! Creates a render target texture.
 ITexture* CBurningVideoDriver::addRenderTargetTexture(const core::dimension2d<u32>& size,
-	const io::path& name, const ECOLOR_FORMAT format
+	const io::path& name, const ECOLOR_FORMAT format, u32 multiSamples
 #if defined(PATCH_SUPERTUX_8_0_1_with_1_9_0)
 	, const bool useStencil
 #endif

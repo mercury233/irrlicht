@@ -582,6 +582,75 @@ bool rttFormats(video::E_DRIVER_TYPE driverType)
 	return true;
 }
 
+bool rttSwitching(video::E_DRIVER_TYPE driverType)
+{
+	SIrrlichtCreationParameters cp;
+	cp.DriverType = driverType;
+	cp.WindowSize = core::dimension2di(120, 50);
+	cp.Vsync = true;
+
+	IrrlichtDevice* device = createDeviceEx(cp);
+	if (!device)
+		return true;
+
+	video::IVideoDriver* driver = device->getVideoDriver();
+	if (!driver->queryFeature(video::EVDF_RENDER_TO_TARGET))
+	{
+		device->closeDevice();
+		device->run();
+		device->drop();
+		return true;
+	}
+
+	stabilizeScreenBackground(driver);
+
+	logTestString("Testing driver %ls\n", driver->getName());
+
+	// create 2 render targets
+	const core::dimension2d<u32> rtDim(32, 32);
+
+	video::IRenderTarget* renderTarget1 = driver->addRenderTarget();
+	video::ITexture* renderTargetTex1 = driver->addRenderTargetTexture(rtDim, "RTT1", video::ECF_A8R8G8B8);
+	video::ITexture* renderTargetDepth1 = driver->addRenderTargetTexture(rtDim, "DepthStencil1", video::ECF_D16); 
+	renderTarget1->setTexture(renderTargetTex1, renderTargetDepth1);
+
+	video::IRenderTarget* renderTarget2 = driver->addRenderTarget();
+	video::ITexture* renderTargetTex2 = driver->addRenderTargetTexture(rtDim, "RTT2", video::ECF_A8R8G8B8);
+	renderTarget2 = driver->addRenderTarget();
+	video::ITexture* renderTargetDepth2 = driver->addRenderTargetTexture(rtDim, "DepthStencil2", video::ECF_D16); 
+	renderTarget2->setTexture(renderTargetTex2, renderTargetDepth2);
+
+	if (!renderTargetTex1 || !renderTargetTex2 || !renderTarget1 || !renderTarget2 )
+		return false;
+
+	driver->beginScene(video::ECBF_COLOR | video::ECBF_DEPTH, video::SColor(0));
+
+	driver->setRenderTargetEx(renderTarget1, video::ECBF_COLOR | video::ECBF_DEPTH, video::SColor(255,0,255,0));
+	core::recti centerRttRect(8, 8, 24, 24);
+	driver->draw2DRectangle( centerRttRect, video::SColor(255, 255, 0, 0 ), video::SColor(255, 0, 0, 255), video::SColor(255, 127, 0, 0), video::SColor(255, 0, 0, 127));
+	{
+		driver->setRenderTargetEx(renderTarget2, video::ECBF_COLOR | video::ECBF_DEPTH, video::SColor(255,0,0,255));
+		driver->draw2DRectangle( centerRttRect, video::SColor(255, 0, 255, 0 ), video::SColor(255, 0, 0, 255), video::SColor(255, 0, 227, 0), video::SColor(255, 0, 0, 127));
+		driver->setRenderTargetEx(renderTarget1, 0);
+		driver->draw2DRectangle( core::recti(0, 0, 7, 7), video::SColor(255, 255, 0, 256), video::SColor(255, 0, 0, 255), video::SColor(255, 127, 0, 127), video::SColor(255, 0, 0, 127));
+	}
+
+	driver->setRenderTargetEx(0, 0);
+	driver->draw2DRectangle( core::recti(10, 1, 18, 9), video::SColor(255, 255, 255, 0 ), video::SColor(255, 0, 0, 255), video::SColor(255, 127, 127, 0), video::SColor(255, 0, 0, 127));
+
+	driver->draw2DImage(renderTargetTex1, core::vector2di(10,15));
+	driver->draw2DImage(renderTargetTex2, core::vector2di(70,15));
+
+	driver->endScene();
+
+	bool result = takeScreenshotAndCompareAgainstReference(driver, "-rttSwitching.png");
+
+	device->closeDevice();
+	device->run();
+	device->drop();
+	return result;
+}
+
 bool renderTargetTexture(void)
 {
 	bool result = true;
@@ -594,6 +663,7 @@ bool renderTargetTexture(void)
 
 	TestWithAllDrivers(rttAndAntiAliasing);
 	TestWithAllDrivers(rttAndText);
+	TestWithAllDrivers(rttSwitching);
 
 	logTestString("Test RTT format support\n");
 	TestWithAllHWDrivers(rttFormats);

@@ -666,10 +666,10 @@ IReadFile* CZipReader::createAndOpenFile(u32 index)
 			{
 				err = inflate(&stream, Z_FINISH);
 				inflateEnd(&stream);
+				// Note: if err is already Z_OK it might be a problem as that
+				//        would mean inflate didn't finish in one call
 				if (err == Z_STREAM_END)
 					err = Z_OK;
-				err = Z_OK;
-				inflateEnd(&stream);
 			}
 
 			if (decrypted)

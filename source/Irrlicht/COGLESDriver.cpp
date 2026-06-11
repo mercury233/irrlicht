@@ -2699,7 +2699,7 @@ IGPUProgrammingServices* COGLES1Driver::getGPUProgrammingServices()
 
 
 ITexture* COGLES1Driver::addRenderTargetTexture(const core::dimension2d<u32>& size,
-	const io::path& name, const ECOLOR_FORMAT format)
+	const io::path& name, const ECOLOR_FORMAT format, u32 multiSamples)
 {
 	//disable mip-mapping
 	bool generateMipLevels = getTextureCreationFlag(ETCF_CREATE_MIP_MAPS);
@@ -2715,7 +2715,7 @@ ITexture* COGLES1Driver::addRenderTargetTexture(const core::dimension2d<u32>& si
 		destSize = destSize.getOptimalSize((size == size.getOptimalSize()), false, false);
 	}
 
-	COGLES1Texture* renderTargetTexture = new COGLES1Texture(name, destSize, ETT_2D, format, this);
+	COGLES1Texture* renderTargetTexture = new COGLES1Texture(name, destSize, ETT_2D, format, multiSamples, this);
 	addTexture(renderTargetTexture);
 	renderTargetTexture->drop();
 
@@ -2742,7 +2742,7 @@ ITexture* COGLES1Driver::addRenderTargetTextureCubemap(const irr::u32 sideLen, c
 		destSize = destSize.getOptimalSize((size == size.getOptimalSize()), false, false);
 	}
 
-	COGLES1Texture* renderTargetTexture = new COGLES1Texture(name, destSize, ETT_CUBEMAP, format, this);
+	COGLES1Texture* renderTargetTexture = new COGLES1Texture(name, destSize, ETT_CUBEMAP, format, 0, this);
 	addTexture(renderTargetTexture);
 	renderTargetTexture->drop();
 

@@ -693,7 +693,7 @@ int main()
 	/* Add some UI */
 	if ( eventReceiver.Shader )
 	{
-		skin->setColor(gui::EGDC_3D_FACE, video::SColor(50, 160, 120, 120));
+		skin->setColor(gui::EGDC_3D_FACE, video::SColor(150, 160, 120, 120));
 
 		u32 top = dimDevice.Height - 200;
 		const u32 left = dimDevice.Width - 350;

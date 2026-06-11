@@ -103,18 +103,6 @@ public:
 		glTexParameteri(TextureType, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(TextureType, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-#ifdef GL_GENERATE_MIPMAP_HINT
-		if (HasMipMaps)
-		{
-			if (Driver->getTextureCreationFlag(ETCF_OPTIMIZED_FOR_SPEED))
-				glHint(GL_GENERATE_MIPMAP_HINT, GL_FASTEST);
-			else if (Driver->getTextureCreationFlag(ETCF_OPTIMIZED_FOR_QUALITY))
-				glHint(GL_GENERATE_MIPMAP_HINT, GL_NICEST);
-			else
-				glHint(GL_GENERATE_MIPMAP_HINT, GL_DONT_CARE);
-		}
-#endif
-
 #if !defined(IRR_OPENGL_HAS_glGenerateMipmap) && defined(GL_GENERATE_MIPMAP)
 		if (HasMipMaps)
 		{
@@ -161,7 +149,7 @@ public:
 		DriverType = Driver->getDriverType();
 		MultiSamples = multiSamples;
 		TextureType = TextureTypeIrrToGL(Type, MultiSamples);
-		HasMipMaps = false;
+		HasMipMaps = Driver->getTextureCreationFlag(ETCF_CREATE_MIP_MAPS);
 		IsRenderTarget = true;
 
 		OriginalColorFormat = format;
@@ -182,6 +170,15 @@ public:
 		}
 
 		glGenTextures(1, &TextureName);
+
+#if !defined(IRR_OPENGL_HAS_glGenerateMipmap) && defined(GL_GENERATE_MIPMAP)
+		if (HasMipMaps)
+		{
+			LegacyAutoGenerateMipMaps = Driver->getTextureCreationFlag(ETCF_AUTO_GENERATE_MIP_MAPS)  &&
+										Driver->queryFeature(EVDF_MIP_MAP_AUTO_UPDATE);
+			glTexParameteri(TextureType, GL_GENERATE_MIPMAP, LegacyAutoGenerateMipMaps ? GL_TRUE : GL_FALSE);
+		}
+#endif
 
 		const COpenGLCoreTexture* prevTexture = Driver->getCacheHandler()->getTextureCache().get(0);
 		Driver->getCacheHandler()->getTextureCache().set(0, this);
@@ -445,6 +442,15 @@ public:
 		else
 		{
 #ifdef IRR_OPENGL_HAS_glGenerateMipmap
+	#ifdef GL_GENERATE_MIPMAP_HINT
+			if (Driver->getTextureCreationFlag(ETCF_OPTIMIZED_FOR_SPEED))
+				glHint(GL_GENERATE_MIPMAP_HINT, GL_FASTEST);
+			else if (Driver->getTextureCreationFlag(ETCF_OPTIMIZED_FOR_QUALITY))
+				glHint(GL_GENERATE_MIPMAP_HINT, GL_NICEST);
+			else
+				glHint(GL_GENERATE_MIPMAP_HINT, GL_DONT_CARE);
+	#endif
+
 	#if !defined(IRR_COMPILE_GLES2_COMMON)
 			glEnable(GL_TEXTURE_2D);	// Hack some ATI cards need this glEnable according to https://www.khronos.org/opengl/wiki/Common_Mistakes
 	#endif

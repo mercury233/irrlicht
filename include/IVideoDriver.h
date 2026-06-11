@@ -393,24 +393,26 @@ namespace video
 								glBindFramebuffer(GL_READ_FRAMEBUFFER, renderTarget->getExposedRenderTargetData().OpenGL.FramebufferName);
 								glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // default framebuffer
 								glBlitFramebuffer(0, 0, dim.Width, dim.Height, 0, 0, dim.Width, dim.Height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		\param mipmap When enabled the texture is create with mipmaps (if supported by driver/device).
 		\return Pointer to the created texture or 0 if the texture
 		could not be created. This pointer should not be dropped. See
 		IReferenceCounted::drop() for more information.
 		You may want to remove it from driver texture cache with removeTexture if you no longer need it.
 		*/
 		virtual ITexture* addRenderTargetTexture(const core::dimension2d<u32>& size,
-				const io::path& name = "rt", const ECOLOR_FORMAT format = ECF_UNKNOWN, u32 multiSamples=0) =0;
+				const io::path& name = "rt", const ECOLOR_FORMAT format = ECF_UNKNOWN, u32 multiSamples=0, bool mipmap=false) =0;
 
 		//! Adds a new render target texture with 6 sides for a cubemap map to the texture cache.
 		/** \param sideLen Length of one cubemap side.
 		\param name A name for the texture. Later calls of getTexture() with this name will return this texture.
 		The name can _not_ be empty.
 		\param format The color format of the render target. Floating point formats are supported.
+		\param mipmap When enabled the texture is create with mipmaps (if supported by driver/device).
 		\return Pointer to the created texture or 0 if the texture
 		could not be created. This pointer should not be dropped. See
 		IReferenceCounted::drop() for more information. */
 		virtual ITexture* addRenderTargetTextureCubemap(const irr::u32 sideLen,
-				const io::path& name = "rt", const ECOLOR_FORMAT format = ECF_UNKNOWN) =0;
+				const io::path& name = "rt", const ECOLOR_FORMAT format = ECF_UNKNOWN, bool mipmap=false) =0;
 
 		//! Removes a texture from the texture cache and deletes it.
 		/** This method can free a lot of memory!

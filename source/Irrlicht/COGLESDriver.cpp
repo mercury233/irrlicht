@@ -2699,11 +2699,11 @@ IGPUProgrammingServices* COGLES1Driver::getGPUProgrammingServices()
 
 
 ITexture* COGLES1Driver::addRenderTargetTexture(const core::dimension2d<u32>& size,
-	const io::path& name, const ECOLOR_FORMAT format, u32 multiSamples)
+	const io::path& name, const ECOLOR_FORMAT format, u32 multiSamples, bool mipmap)
 {
-	//disable mip-mapping
+	// set mip-mapping flags
 	bool generateMipLevels = getTextureCreationFlag(ETCF_CREATE_MIP_MAPS);
-	setTextureCreationFlag(ETCF_CREATE_MIP_MAPS, false);
+	setTextureCreationFlag(ETCF_CREATE_MIP_MAPS, mipmap);
 
 	bool supportForFBO = (Feature.ColorAttachment > 0);
 
@@ -2725,11 +2725,11 @@ ITexture* COGLES1Driver::addRenderTargetTexture(const core::dimension2d<u32>& si
 	return renderTargetTexture;
 }
 
-ITexture* COGLES1Driver::addRenderTargetTextureCubemap(const irr::u32 sideLen, const io::path& name, const ECOLOR_FORMAT format)
+ITexture* COGLES1Driver::addRenderTargetTextureCubemap(const irr::u32 sideLen, const io::path& name, const ECOLOR_FORMAT format, bool mipmap)
 {
-	//disable mip-mapping
+	// set mip-mapping flags
 	bool generateMipLevels = getTextureCreationFlag(ETCF_CREATE_MIP_MAPS);
-	setTextureCreationFlag(ETCF_CREATE_MIP_MAPS, false);
+	setTextureCreationFlag(ETCF_CREATE_MIP_MAPS, mipmap);
 
 	bool supportForFBO = (Feature.ColorAttachment > 0);
 

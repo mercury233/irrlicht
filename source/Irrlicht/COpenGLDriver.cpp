@@ -3809,14 +3809,14 @@ IVideoDriver* COpenGLDriver::getVideoDriver()
 
 
 ITexture* COpenGLDriver::addRenderTargetTexture(const core::dimension2d<u32>& size,
-	const io::path& name, const ECOLOR_FORMAT format, u32 multiSamples)
+	const io::path& name, const ECOLOR_FORMAT format, u32 multiSamples, bool mipmap)
 {
 	if ( IImage::isCompressedFormat(format) )
 		return 0;
 
-	//disable mip-mapping
+	// set mip-mapping flags
 	bool generateMipLevels = getTextureCreationFlag(ETCF_CREATE_MIP_MAPS);
-	setTextureCreationFlag(ETCF_CREATE_MIP_MAPS, false);
+	setTextureCreationFlag(ETCF_CREATE_MIP_MAPS, mipmap);
 
 	bool supportForFBO = (Feature.ColorAttachment > 0);
 
@@ -3839,14 +3839,14 @@ ITexture* COpenGLDriver::addRenderTargetTexture(const core::dimension2d<u32>& si
 }
 
 //! Creates a render target texture for a cubemap
-ITexture* COpenGLDriver::addRenderTargetTextureCubemap(const irr::u32 sideLen, const io::path& name, const ECOLOR_FORMAT format)
+ITexture* COpenGLDriver::addRenderTargetTextureCubemap(const irr::u32 sideLen, const io::path& name, const ECOLOR_FORMAT format, bool mipmap)
 {
 	if ( IImage::isCompressedFormat(format) )
 		return 0;
 
-	//disable mip-mapping
+	// set mip-mapping flags
 	bool generateMipLevels = getTextureCreationFlag(ETCF_CREATE_MIP_MAPS);
-	setTextureCreationFlag(ETCF_CREATE_MIP_MAPS, false);
+	setTextureCreationFlag(ETCF_CREATE_MIP_MAPS, mipmap);
 
 	bool supportForFBO = (Feature.ColorAttachment > 0);
 

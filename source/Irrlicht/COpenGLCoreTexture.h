@@ -222,6 +222,12 @@ public:
 			break;
 		}
 
+		if (HasMipMaps && !LegacyAutoGenerateMipMaps)
+		{
+			// Create mipmaps (glTexImage2D leaves texture in incomplete state otherwise)
+			regenerateMipMapLevels(0, 0);
+		}
+
 		Driver->getCacheHandler()->getTextureCache().set(0, prevTexture);
 		Driver->testGLError(__LINE__);
 	}

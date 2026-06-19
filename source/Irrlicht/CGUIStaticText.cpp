@@ -348,7 +348,7 @@ void CGUIStaticText::breakText()
 			if (c == L'\r') // Mac or Windows breaks
 			{
 				lineBreak = true;
-				if (Text[i+1] == L'\n') // Windows breaks
+				if (i+1 < size && Text[i+1] == L'\n') // Windows breaks
 				{
 					Text.erase(i+1);
 					--size;
@@ -386,7 +386,7 @@ void CGUIStaticText::breakText()
 						if (where != -1)
 						{
 							core::stringw first  = word.subString(0, where);
-							core::stringw second = word.subString(where, word.size() - where);
+							core::stringw second = word.subString(where + 1, word.size() - where - 1);
 							BrokenText.push_back(line + first + L"-");
 							const s32 secondLength = font->getDimension(second.c_str()).Width;
 
@@ -422,7 +422,7 @@ void CGUIStaticText::breakText()
 					whitespace = L"";
 				}
 
-				if ( isWhitespace )
+				if ( isWhitespace && c != 0 )
 				{
 					whitespace += c;
 				}
@@ -448,28 +448,37 @@ void CGUIStaticText::breakText()
 	else
 	{
 		// right-to-left
-		for (s32 i=size; i>=0; --i)
+		for (s32 i=size-1; i>=0; --i)
 		{
 			c = Text[i];
 			bool lineBreak = false;
 
-			if (c == L'\r') // Mac or Windows breaks
+			if (c == L'\n') // Unix or Windows breaks
 			{
 				lineBreak = true;
-				if ((i>0) && Text[i-1] == L'\n') // Windows breaks
+				if (i > 0 && Text[i-1] == L'\r') // Windows breaks
 				{
 					Text.erase(i-1);
 					--size;
+					--i; // skip erased \r, only necessary for right-to-left path
 				}
 				c = '\0';
 			}
-			else if (c == L'\n') // Unix breaks
+			else if (c == L'\r') // Mac breaks
 			{
 				lineBreak = true;
 				c = '\0';
 			}
 
-			if (c==L' ' || c==0 || i==0)
+			bool isWhitespace = (c == L' ' || c == 0);
+
+			if (!isWhitespace)
+			{
+				// yippee this is a word..
+				word = core::stringw(&c, 1) + word;
+			}
+
+			if (isWhitespace || i == 0)
 			{
 				if (word.size())
 				{
@@ -497,8 +506,10 @@ void CGUIStaticText::breakText()
 					whitespace = L"";
 				}
 
-				if (c != 0)
+				if (isWhitespace && c != 0)
+				{
 					whitespace = core::stringw(&c, 1) + whitespace;
+				}
 
 				// compute line break
 				if (lineBreak)
@@ -511,11 +522,6 @@ void CGUIStaticText::breakText()
 					whitespace = L"";
 					length = 0;
 				}
-			}
-			else
-			{
-				// yippee this is a word..
-				word = core::stringw(&c, 1) + word;
 			}
 		}
 

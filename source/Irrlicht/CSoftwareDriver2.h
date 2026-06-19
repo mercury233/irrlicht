@@ -168,7 +168,7 @@ namespace video
 
 		//! Creates a render target texture.
 		virtual ITexture* addRenderTargetTexture(const core::dimension2d<u32>& size,
-			const io::path& name, const ECOLOR_FORMAT format = ECF_UNKNOWN
+			const io::path& name, const ECOLOR_FORMAT format = ECF_UNKNOWN, u32 multiSamples=0, bool mipmap=false
 #if defined(PATCH_SUPERTUX_8_0_1_with_1_9_0)
 			, const bool useStencil = false
 #endif
@@ -176,7 +176,7 @@ namespace video
 
 		//! Creates a render target texture for a cubemap
 		ITexture* addRenderTargetTextureCubemap(const irr::u32 sideLen,
-			const io::path& name, const ECOLOR_FORMAT format) IRR_OVERRIDE;
+			const io::path& name, const ECOLOR_FORMAT format, bool mipmap) IRR_OVERRIDE;
 
 		virtual void clearBuffers(u16 flag, SColor color, f32 depth, u8 stencil) IRR_OVERRIDE;
 

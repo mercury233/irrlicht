@@ -135,11 +135,10 @@ private:
 class MyEventReceiver : public IEventReceiver
 {
 public:
-	MyEventReceiver() : Driver(0), Shader(0)
+	MyEventReceiver() : Quit(false), Driver(0), Shader(0)
 		,BackgroundSkybox(0), BackgroundCube(0)
-		, CubemapUpdates(2)
+		, DynmicCubemapUpdate(true)
 		, CurrentStyleUVW(0), CurrentRoughness(0)
-		, NeedCubemapUpdate(true)
 	{
 		StyleNamesUVW.push_back( L"specular" );
 		StyleNamesUVW.push_back( L"diffuse" );
@@ -153,6 +152,9 @@ public:
 		{
 			switch(event.KeyInput.Key )
 			{
+			case KEY_ESCAPE:
+				Quit = true;
+				break;
 			case KEY_SPACE:
 				// Switch between different texture mapping styles
 				if ( Shader )
@@ -175,7 +177,6 @@ public:
 						BackgroundSkybox->setVisible(true);
 						BackgroundCube->setVisible(false);
 					}
-					NeedCubemapUpdate = true;
 				}
 				break;
 			case KEY_KEY_I:
@@ -193,7 +194,7 @@ public:
 				break;
 			case KEY_KEY_U:
 				// Switch dynamic cubemap updates on/off.
-				CubemapUpdates = (CubemapUpdates+1) % 3;
+				DynmicCubemapUpdate = !DynmicCubemapUpdate;
 				updateCubemapUpdates();
 				break;
 			case KEY_PLUS:
@@ -255,26 +256,11 @@ public:
 	{
 		if ( CurrentCubemapUpdates )
 		{
-			switch ( CubemapUpdates )
-			{
-				case 0:	CurrentCubemapUpdates->setText( L"static");	break;
-				case 1:	CurrentCubemapUpdates->setText( L"dynamic" );	break;
-				case 2:	CurrentCubemapUpdates->setText( L"dynamic+mips" );	break;
-			}
+			if ( DynmicCubemapUpdate )
+				CurrentCubemapUpdates->setText( L"dynamic" );
+			else
+				CurrentCubemapUpdates->setText( L"static");
 		}
-	}
-
-	// Check if the cubemap textures should be updated with new screenshots
-	// return 0 for no update, 1 for update, 2 for update and fix mip-maps
-	int checkCubemapUpdate()
-	{
-		if ( NeedCubemapUpdate || CubemapUpdates == 2)
-		{
-			NeedCubemapUpdate = false;
-			return 2;
-		}
-
-		return CubemapUpdates;
 	}
 
 	// Add some text-node floating above it's parent node.
@@ -290,6 +276,7 @@ public:
 		}
 	}
 
+	bool Quit;
 	irr::video::IVideoDriver* Driver;
 	CubeMapReflectionCallback* Shader;
 
@@ -297,7 +284,7 @@ public:
 	scene::ISceneNode* BackgroundCube;
 	irr::core::array<scene::ISceneNode*> InfoTextNodes;
 
-	int CubemapUpdates;	// 0 = static, 1 = dynamic, 2 = dynamic with rtt
+	bool DynmicCubemapUpdate;	// false = static, true = dynamic
 
 	irr::core::array<irr::core::stringw> StyleNamesUVW;
 
@@ -305,9 +292,6 @@ public:
 	irr::gui::IGUIStaticText* CurrentRoughness;
 	irr::gui::IGUIStaticText* CurrentSeamlessCubemap;
 	irr::gui::IGUIStaticText* CurrentCubemapUpdates;
-
-private:
-	bool NeedCubemapUpdate;
 };
 
 /* Tool class which we use get simple 2-colored cubes
@@ -361,6 +345,7 @@ private:
  Cubemap textures are different from other textures in OpenGL. Each cube side has left-top as the origin. So not flipping Irrlicht textures for those would be fine.
  Except - OpenGL RTT's still render left-bottom - even when the target is a cubemap RTT.
  I found no good way around this so far - it just seems messed up as we get a left-handed/right handed coordinate system change that way.
+ TODO: Couldn't this be solved in glsl shader by passing the info about origin?
 
  So... the following 2 defines are two different workarounds I found. Both are ugly, which one is better in reality depends probably on the scene.
  Only use one of those:
@@ -455,7 +440,8 @@ void renderEnvironmentCubeMap(irr::video::IVideoDriver* driver, irr::scene::ICam
 #endif
 	}
 
-	//dynamicCubeMapRTT->regenerateMipMapLevels();	// Unfortunately we can't seem to have mipmaps for rtt's
+	if ( dynamicCubeMapRTT->hasMipMaps() )
+		dynamicCubeMapRTT->regenerateMipMapLevels();
 
 	driver->setRenderTarget(0);
 	cubeCenterNode->setVisible( true );
@@ -533,8 +519,8 @@ int main()
 	}
 
 	// add fps camera
-	scene::ICameraSceneNode* camera = smgr->addCameraSceneNodeFPS(0, 100.f, 1.f);
-	camera->setPosition( core::vector3df( 0,10,-200 ) );
+	scene::ICameraSceneNode* camera = smgr->addCameraSceneNodeFPS(0, 200.f, 1.f);
+	camera->setPosition( core::vector3df( 0,10,-500 ) );
 	device->getCursorControl()->setVisible(false);
 
 	/*
@@ -564,19 +550,15 @@ int main()
 	video::IRenderTarget* cubeMapRT = driver->addRenderTarget();
 	video::ITexture* dynamicCubeMapRTT = 0;
 	video::ITexture* depthStencilRTT = 0;
-	video::ITexture* dynamicCubeMapRTT_intermediate = 0;	// just for rendering, but not used in material
-	video::ITexture* dynamicCubeMapTex = 0;					// dynamic and with mipmaps
 	scene::ICameraSceneNode* cubeMapCamera = 0;
 	if( driver->queryFeature( video::EVDF_RENDER_TO_TARGET ) )
 	{
 		// Create cube map textures and render target cubemap textures.
 		const u32 dynamicCubeMapSize = 512;
-		dynamicCubeMapRTT = driver->addRenderTargetTextureCubemap(dynamicCubeMapSize, "cube_rtr");
+		bool mipMap = true; // We use mips for roughness, if not needed those can be disabled (no mips = less memory and faster updates)
+		dynamicCubeMapRTT = driver->addRenderTargetTextureCubemap(dynamicCubeMapSize, "cube_rtr", video::ECF_UNKNOWN, mipMap);
 		depthStencilRTT = driver->addRenderTargetTexture(irr::core::dimension2du(dynamicCubeMapSize, dynamicCubeMapSize), "cubemap_ds", irr::video::ECF_D24S8);
-
-		dynamicCubeMapRTT_intermediate = driver->addRenderTargetTextureCubemap(dynamicCubeMapSize, "cube_rtr");
-		dynamicCubeMapTex = driver->addTextureCubemap(dynamicCubeMapSize, "cube_tex");
-
+		
 		// Camera for creating an environment cubemap
 		cubeMapCamera = smgr->addCameraSceneNode();
 		cubeMapCamera->setFOV(core::PI* 0.5f);	// 90° view angle
@@ -591,35 +573,22 @@ int main()
 
 	scene::ISceneNode* sphereNode = 0;
 	scene::ISceneNode* sphereNode2 = 0;
-	scene::ISceneNode* sphereNode3 = 0;
 	scene::IMesh* sphereMesh = smgr->getGeometryCreator()->createSphereMesh(100.f);
 	if( sphereMesh )
 	{
 		// Nothing really special here except they need the shader material to display cubemaps.
 		sphereNode = smgr->addMeshSceneNode( sphereMesh );
-		sphereNode->setPosition( core::vector3df(-250,0,0) );
+		sphereNode->setPosition( core::vector3df(-200,0,0) );
 		sphereNode->updateAbsolutePosition();
 		sphereNode->setMaterialFlag( video::EMF_LIGHTING, false );
 		sphereNode->setMaterialTexture( 0, dynamicCubeMapRTT );
 		sphereNode->setMaterialType( (video::E_MATERIAL_TYPE)cubeMapReflectionMaterial );
-		eventReceiver.addInfoTextNode(font, L"Cubemap dynamic rtt, no mip-maps", sphereNode);
-
-		if ( dynamicCubeMapTex )
-		{
-			sphereNode3 = smgr->addMeshSceneNode( sphereMesh );
-			sphereNode3->setPosition( core::vector3df(0,0,250) );
-			sphereNode3->updateAbsolutePosition();
-			sphereNode3->setMaterialFlag( video::EMF_LIGHTING, false );
-			sphereNode3->setMaterialTexture( 0, dynamicCubeMapTex );
-			sphereNode3->getMaterial(0).TextureLayer[0].TrilinearFilter = false; // this is default anyway. It would be faster - but you can only access integer mip-levels - no filtering between mip-levels.
-			sphereNode3->setMaterialType( (video::E_MATERIAL_TYPE)cubeMapReflectionMaterial );
-			eventReceiver.addInfoTextNode(font, L"Cubemap dynamic with mip-maps", sphereNode3);
-		}
+		eventReceiver.addInfoTextNode(font, L"Cubemap dynamic rtt", sphereNode);
 
 		if ( cubeMapStaticTex )
 		{
 			sphereNode2 = smgr->addMeshSceneNode( sphereMesh );
-			sphereNode2->setPosition( core::vector3df(250,0,0) );
+			sphereNode2->setPosition( core::vector3df(200,0,0) );
 			sphereNode2->updateAbsolutePosition();
 			sphereNode2->setMaterialFlag( video::EMF_LIGHTING, false );
 			sphereNode2->setMaterialTexture( 0, cubeMapStaticTex );
@@ -686,14 +655,14 @@ int main()
 	scene::IMeshSceneNode * movingNode = smgr->addCubeSceneNode(30.f);
 	movingNode->getMaterial(0).Lighting = false;
 	smgr->getMeshManipulator()->setVertexColors( movingNode->getMesh()->getMeshBuffer(0), video::SColor(255, 230, 200, 150));
-	scene::ISceneNodeAnimator* circleAnimator = smgr->createFlyCircleAnimator(core::vector3df(-125, -50.f, 125), 300.f, 0.0005f);
+	scene::ISceneNodeAnimator* circleAnimator = smgr->createFlyCircleAnimator(core::vector3df(-200, -50.f, 125), 300.f, 0.0005f);
 	movingNode->addAnimator(circleAnimator);
 	circleAnimator->drop();
 
 	/* Add some UI */
 	if ( eventReceiver.Shader )
 	{
-		skin->setColor(gui::EGDC_3D_FACE, video::SColor(50, 160, 120, 120));
+		skin->setColor(gui::EGDC_3D_FACE, video::SColor(150, 160, 120, 120));
 
 		u32 top = dimDevice.Height - 200;
 		const u32 left = dimDevice.Width - 350;
@@ -727,7 +696,7 @@ int main()
 
 
 	/* Main loop */
-	while(device->run())
+	while(device->run() && !eventReceiver.Quit)
 	{
 		if (device->isWindowActive())
 		{
@@ -737,8 +706,7 @@ int main()
 			   Usually not something you'll do every frame, but either once at the start
 			   or maybe updating an environment map once in a while.
 			*/
-			int updateCubemaps = eventReceiver.checkCubemapUpdate();
-			if( dynamicCubeMapRTT && sphereNode && updateCubemaps > 0 )
+			if( dynamicCubeMapRTT && sphereNode && eventReceiver.DynmicCubemapUpdate )
 			{
 #ifdef CUBEMAP_UPSIDE_DOWN_GL_PROJECTION
 				core::array<scene::ISceneNode*> allNodes;
@@ -752,41 +720,8 @@ int main()
 					flipCullingFlags(allNodes);
 				}
 #endif
-				/*
-					If rendered just once then this node has still a white (or even undefined) texture at this point
-					Just hiding it and render the background when rendering the cubemap for the other node is less noticable
-					than having a big white dot in the environment texture.
-					Render order can matter if you want several environment maps in your scene.
-				*/
-				if (sphereNode3)
-					sphereNode3->setVisible(false);
 
 				renderEnvironmentCubeMap(driver, cubeMapCamera, sphereNode, cubeMapRT, dynamicCubeMapRTT, depthStencilRTT);
-
-				if ( sphereNode3)
-				{
-					if ( updateCubemaps == 2 )
-					{
-						/*
-							Our rtt's unfortunately don't have mipmaps (sorry, not sure if we can get that somehow...)
-							So if we want mipmaps in the dynamic cubemap we have to copy it to a non-rtt texture.
-							Warning: Very, very slow. Far slower than just creating an environment map as this
-							will copy the texture from GPU to main memory - copy it to a new texture, create mip-maps and
-							upload the result back to the GPU.
-						 */
-						renderEnvironmentCubeMap(driver, cubeMapCamera, sphereNode3, cubeMapRT, dynamicCubeMapRTT_intermediate, depthStencilRTT);
-						for ( int i=0; i<6; ++i)
-						{
-							void * rtData = dynamicCubeMapRTT_intermediate->lock(video::ETLM_READ_ONLY, 0, i, video::ETLF_NONE);
-							void * tData = dynamicCubeMapTex->lock(video::ETLM_READ_WRITE, 0, i);
-							memcpy(tData, rtData, dynamicCubeMapTex->getPitch()*dynamicCubeMapTex->getSize().Width);
-							dynamicCubeMapRTT_intermediate->unlock();
-							dynamicCubeMapTex->unlock();
-						}
-						dynamicCubeMapTex->regenerateMipMapLevels();
-					}
-					sphereNode3->setVisible(true);
-				}
 
 #ifdef CUBEMAP_UPSIDE_DOWN_GL_PROJECTION
 				if ( driverType == video::EDT_OPENGL )

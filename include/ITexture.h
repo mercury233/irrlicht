@@ -192,7 +192,7 @@ public:
 
 	//! constructor
 	ITexture(const io::path& name, E_TEXTURE_TYPE type) : NamedPath(name), DriverType(EDT_NULL), OriginalColorFormat(ECF_UNKNOWN),
-		ColorFormat(ECF_UNKNOWN), Pitch(0), HasMipMaps(false), IsRenderTarget(false), Source(ETS_UNKNOWN), Type(type)
+		ColorFormat(ECF_UNKNOWN), Pitch(0), HasMipMaps(false), IsRenderTarget(false), MultiSamples(0), Source(ETS_UNKNOWN), Type(type)
 	{
 	}
 
@@ -289,6 +289,9 @@ public:
 	\return True if this is a render target, otherwise false. */
 	bool isRenderTarget() const { return IsRenderTarget; }
 
+	//! If a texture has multisamples return the amount of them
+	u32 getNumMultiSamples() const { return MultiSamples; }
+
 	//! Get name of texture (in most cases this is the filename)
 	const io::SNamedPath& getName() const { return NamedPath; }
 
@@ -366,6 +369,7 @@ protected:
 	u32 Pitch;
 	bool HasMipMaps;
 	bool IsRenderTarget;
+	u32 MultiSamples;
 	E_TEXTURE_SOURCE Source;
 	E_TEXTURE_TYPE Type;
 };

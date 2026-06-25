@@ -384,7 +384,7 @@ void CGUIStaticText::breakText()
 						// break the word at
 						const wchar_t hyphen = wchar_t(0x00AD);
 						int idxHyphen = word.findNext(hyphen, 1); // look for first one beyond index 0 (which would be pointless)
-						if (idxHyphen != 0) // found one
+						if (idxHyphen != -1) // found one
 						{
 							core::stringw first  = word.subString(0, idxHyphen);
 							core::stringw second = word.subString(idxHyphen+1, word.size() - idxHyphen - 1);

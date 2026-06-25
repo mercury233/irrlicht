@@ -348,7 +348,7 @@ void CGUIStaticText::breakText()
 			if (c == L'\r') // Mac or Windows breaks
 			{
 				lineBreak = true;
-				if (i+1 < size && Text[i+1] == L'\n') // Windows breaks
+				if (Text[i+1] == L'\n') // Windows breaks (+1 safe as text is 0 terminated)
 				{
 					Text.erase(i+1);
 					--size;
@@ -380,13 +380,14 @@ void CGUIStaticText::breakText()
 					if (wordlgth > elWidth)
 					{
 						// This word is too long to fit in the available space, look for
-						// the Unicode Soft HYphen (SHY / 00AD) character for a place to
+						// the Unicode soft hyphen  (SHY / 00AD) character for a place to
 						// break the word at
-						int where = word.findFirst( wchar_t(0x00AD) );
-						if (where != -1)
+						const wchar_t hyphen = wchar_t(0x00AD);
+						int idxHyphen = word.findNext(hyphen, 1); // look for first one beyond index 0 (which would be pointless)
+						if (idxHyphen != -1) // found one
 						{
-							core::stringw first  = word.subString(0, where);
-							core::stringw second = word.subString(where + 1, word.size() - where - 1);
+							core::stringw first  = word.subString(0, idxHyphen);
+							core::stringw second = word.subString(idxHyphen+1, word.size() - idxHyphen - 1);
 							BrokenText.push_back(line + first + L"-");
 							const s32 secondLength = font->getDimension(second.c_str()).Width;
 
@@ -447,7 +448,7 @@ void CGUIStaticText::breakText()
 	}
 	else
 	{
-		// right-to-left
+		// right-to-left (Note: no hyphen checks in this direction so far)
 		for (s32 i=size-1; i>=0; --i)
 		{
 			c = Text[i];

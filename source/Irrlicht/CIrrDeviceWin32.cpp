@@ -135,7 +135,7 @@ namespace irr
 	}
 	void SJoystickWin32Control::directInputAddJoystick(LPCDIDEVICEINSTANCE lpddi)
 	{
-		//Get the GUID of the joystuck
+		//Get the GUID of the joystick
 		const GUID guid = lpddi->guidInstance;
 
 		JoystickInfo activeJoystick;

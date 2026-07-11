@@ -862,7 +862,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			// resize
 			dev = getDeviceFromHWnd(hWnd);
-			if (dev)
+			if (dev && wParam != SIZE_MINIMIZED)
 				dev->OnResized();
 		}
 		return 0;
@@ -1302,6 +1302,12 @@ void CIrrDeviceWin32::resizeIfNecessary()
 	if (!Resized || !getVideoDriver())
 		return;
 
+	if (IsIconic(HWnd))
+	{
+		Resized = false;
+		return;
+	}
+
 	RECT r;
 	GetClientRect(HWnd, &r);
 
@@ -1432,12 +1438,7 @@ bool CIrrDeviceWin32::isWindowFocused() const
 //! returns if window is minimized
 bool CIrrDeviceWin32::isWindowMinimized() const
 {
-	WINDOWPLACEMENT plc;
-	plc.length=sizeof(WINDOWPLACEMENT);
-	bool ret=false;
-	if (GetWindowPlacement(HWnd,&plc))
-		ret = plc.showCmd == SW_SHOWMINIMIZED;
-	return ret;
+	return IsIconic(HWnd) != FALSE;
 }
 
 

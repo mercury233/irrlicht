@@ -3646,6 +3646,12 @@ bool COpenGLDriver::needsTransparentRenderPass(const irr::video::SMaterial& mate
 //! the window was resized.
 void COpenGLDriver::OnResize(const core::dimension2d<u32>& size)
 {
+	if (size.Width == 0 || size.Height == 0)
+	{
+		os::Printer::log("Ignoring OpenGL resize operation to zero-sized framebuffer.", ELL_WARNING);
+		return;
+	}
+
 	CNullDriver::OnResize(size);
 	CacheHandler->setViewport(0, 0, size.Width, size.Height);
 	Transformation3DChanged = true;

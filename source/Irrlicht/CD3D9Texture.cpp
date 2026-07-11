@@ -545,20 +545,20 @@ void CD3D9Texture::releaseTexture()
 {
 	if (RTTSurface)
 	{
-		if (RTTSurface->Release() == 0)
-			RTTSurface = 0;
+		RTTSurface->Release();
+		RTTSurface = 0;
 	}
 
 	if (Texture)
 	{
-		if (Texture->Release() == 0)
-			Texture = 0;
+		Texture->Release();
+		Texture = 0;
 	}
 
 	if (CubeTexture)
 	{
-		if (CubeTexture->Release() == 0)
-			CubeTexture = 0;
+		CubeTexture->Release();
+		CubeTexture = 0;
 	}
 }
 

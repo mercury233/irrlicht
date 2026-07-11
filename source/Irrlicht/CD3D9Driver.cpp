@@ -2908,6 +2908,16 @@ bool CD3D9Driver::reset()
 {
 	os::Printer::log("Resetting D3D9 device.", ELL_INFORMATION);
 
+	// SetTexture holds COM references, including references to default-pool RTTs
+	// which must all be gone before Reset.
+	for (u32 i = 0; i < MaxTextureUnits; ++i)
+	{
+		pID3DDevice->SetTexture(i, 0);
+		CurrentTexture[i] = 0;
+	}
+	for (u32 i = 0; i < 4; ++i)
+		pID3DDevice->SetTexture(D3DVERTEXTEXTURESAMPLER0 + i, 0);
+
 	for (u32 i = 0; i<RenderTargets.size(); ++i)
 	{
 		if (RenderTargets[i]->getDriverType() == EDT_DIRECT3D9)

@@ -905,25 +905,17 @@ EKEY_CODE CIrrDeviceLinux::getKeyCode(XEvent &event)
 	}
 	if (keyCode == 0)
 	{
-		// Any value is better than none, that allows at least using the keys.
-		// Worst case is that some keys will be identical, still better than _all_
-		// unknown keys being identical.
-		if ( !mp.X11Key )
+		if (mp.X11Key && mp.X11Key < KEY_KEY_CODES_COUNT)
+		{
+			keyCode = (EKEY_CODE)mp.X11Key;
+			os::Printer::log(idx == -1 ? "EKEY_CODE not found, using orig. X11 keycode" : "EKEY_CODE is 0, using orig. X11 keycode", core::stringc(mp.X11Key).c_str(), ELL_INFORMATION);
+		}
+		else if (event.xkey.keycode < KEY_KEY_CODES_COUNT)
 		{
 			keyCode = (EKEY_CODE)event.xkey.keycode;
-			os::Printer::log("No such X11Key, using event keycode", core::stringc(event.xkey.keycode).c_str(), ELL_INFORMATION);
+			os::Printer::log(mp.X11Key ? "X11 KeySym exceeds EKEY_CODE range, using event keycode" : "No such X11Key, using event keycode", core::stringc(event.xkey.keycode).c_str(), ELL_INFORMATION);
 		}
-		else if (idx == -1)
-		{
-			keyCode = (EKEY_CODE)mp.X11Key;
-			os::Printer::log("EKEY_CODE not found, using orig. X11 keycode", core::stringc(mp.X11Key).c_str(), ELL_INFORMATION);
-		}
-		else
-		{
-			keyCode = (EKEY_CODE)mp.X11Key;
-			os::Printer::log("EKEY_CODE is 0, using orig. X11 keycode", core::stringc(mp.X11Key).c_str(), ELL_INFORMATION);
-		}
- 	}
+	}
 	return keyCode;
 }
 #endif

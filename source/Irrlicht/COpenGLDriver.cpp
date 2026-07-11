@@ -168,6 +168,7 @@ bool COpenGLDriver::genericDriverInit()
 	DriverAttributes->setAttribute("AntiAlias", AntiAlias);
 
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
 	UserClipPlanes.reallocate(MaxUserClipPlanes);
 	for (i=0; i<MaxUserClipPlanes; ++i)

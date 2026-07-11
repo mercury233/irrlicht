@@ -2080,6 +2080,8 @@ static void joystickRemovalCallback(void * target,
 bool CIrrDeviceMacOSX::activateJoysticks(core::array<SJoystickInfo> & joystickInfo)
 {
 #if defined (_IRR_COMPILE_WITH_JOYSTICK_EVENTS_)
+	for (u32 joystick = 0; joystick < ActiveJoysticks.size(); ++joystick)
+		closeJoystickDevice(&ActiveJoysticks[joystick]);
 	ActiveJoysticks.clear();
 	joystickInfo.clear();
 
@@ -2146,7 +2148,6 @@ bool CIrrDeviceMacOSX::activateJoysticks(core::array<SJoystickInfo> & joystickIn
 				result = (*(info.interface))->open (info.interface, 0);
 				if (result == kIOReturnSuccess)
 				{
-					(*(info.interface))->setRemovalCallback (info.interface, joystickRemovalCallback, &info, &info);
 					getJoystickDeviceInfo(hidObject, hidProperties, &info);
 
 					// get elements
@@ -2209,6 +2210,12 @@ bool CIrrDeviceMacOSX::activateJoysticks(core::array<SJoystickInfo> & joystickIn
 		{
 			continue;
 		}
+	}
+	// core::array can reallocate while devices are appended, invalidating callback contexts.
+	for (u32 joystick = 0; joystick < ActiveJoysticks.size(); ++joystick)
+	{
+		JoystickInfo* info = &ActiveJoysticks[joystick];
+		(*(info->interface))->setRemovalCallback(info->interface, joystickRemovalCallback, info, info);
 	}
 	result = IOObjectRelease (hidIterator);
 

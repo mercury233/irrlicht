@@ -195,23 +195,33 @@ bool CGUIFileOpenDialog::OnEvent(const SEvent& event)
 				if (event.GUIEvent.Caller == CloseButton ||
 					event.GUIEvent.Caller == CancelButton)
 				{
+					grab();
 					sendCancelEvent();
 					remove();
+					drop();
 					return true;
 				}
 				else
 				if (event.GUIEvent.Caller == OKButton )
 				{
+					grab();
 					if ( !FileDirectory.empty() )
 					{
 						sendSelectedEvent( EGET_DIRECTORY_SELECTED );
+						if (!Parent)
+						{
+							drop();
+							return true;
+						}
 					}
 					if ( !FileName.empty() )
 					{
 						sendSelectedEvent( EGET_FILE_SELECTED );
 						remove();
+						drop();
 						return true;
 					}
+					drop();
 				}
 				break;
 

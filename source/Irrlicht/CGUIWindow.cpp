@@ -157,8 +157,11 @@ bool CGUIWindow::OnEvent(const SEvent& event)
 						e.GUIEvent.EventType = EGET_ELEMENT_CLOSED;
 
 						// if the event was not absorbed
-						if (!Parent->OnEvent(e))
+						grab();
+						const bool absorbed = Parent->OnEvent(e);
+						if (!absorbed)
 							remove();
+						drop();
 
 						return true;
 

@@ -255,11 +255,6 @@ bool CGUIMessageBox::OnEvent(const SEvent& event)
 {
 	if (isEnabled())
 	{
-		SEvent outevent;
-		outevent.EventType = EET_GUI_EVENT;
-		outevent.GUIEvent.Caller = this;
-		outevent.GUIEvent.Element = 0;
-
 		switch(event.EventType)
 		{
 		case EET_KEY_INPUT_EVENT:
@@ -320,41 +315,25 @@ bool CGUIMessageBox::OnEvent(const SEvent& event)
 			{
 				if (OkButton && event.KeyInput.Key == KEY_RETURN)
 				{
-					setVisible(false);	// this is a workaround to make sure it's no longer the hovered element, crashes on pressing 1-2 times ESC
-					Environment->setFocus(0);
-					outevent.GUIEvent.EventType = EGET_MESSAGEBOX_OK;
-					Parent->OnEvent(outevent);
-					remove();
+					sendEventAndRemove(EGET_MESSAGEBOX_OK);
 					return true;
 				}
 				else
 				if ((CancelButton || CloseButton) && event.KeyInput.Key == KEY_ESCAPE)
 				{
-					setVisible(false);	// this is a workaround to make sure it's no longer the hovered element, crashes on pressing 1-2 times ESC
-					Environment->setFocus(0);
-					outevent.GUIEvent.EventType = EGET_MESSAGEBOX_CANCEL;
-					Parent->OnEvent(outevent);
-					remove();
+					sendEventAndRemove(EGET_MESSAGEBOX_CANCEL);
 					return true;
 				}
 				else
 				if (YesButton && event.KeyInput.Key == KEY_KEY_Y)
 				{
-					setVisible(false);	// this is a workaround to make sure it's no longer the hovered element, crashes on pressing 1-2 times ESC
-					Environment->setFocus(0);
-					outevent.GUIEvent.EventType = EGET_MESSAGEBOX_YES;
-					Parent->OnEvent(outevent);
-					remove();
+					sendEventAndRemove(EGET_MESSAGEBOX_YES);
 					return true;
 				}
 				else
 				if (NoButton && event.KeyInput.Key == KEY_KEY_N)
 				{
-					setVisible(false);	// this is a workaround to make sure it's no longer the hovered element, crashes on pressing 1-2 times ESC
-					Environment->setFocus(0);
-					outevent.GUIEvent.EventType = EGET_MESSAGEBOX_NO;
-					Parent->OnEvent(outevent);
-					remove();
+					sendEventAndRemove(EGET_MESSAGEBOX_NO);
 					return true;
 				}
 			}
@@ -364,42 +343,26 @@ bool CGUIMessageBox::OnEvent(const SEvent& event)
 			{
 				if (event.GUIEvent.Caller == OkButton)
 				{
-					setVisible(false);	// this is a workaround to make sure it's no longer the hovered element, crashes on pressing 1-2 times ESC
-					Environment->setFocus(0);
-					outevent.GUIEvent.EventType = EGET_MESSAGEBOX_OK;
-					Parent->OnEvent(outevent);
-					remove();
+					sendEventAndRemove(EGET_MESSAGEBOX_OK);
 					return true;
 				}
 				else
 				if (event.GUIEvent.Caller == CancelButton ||
 					event.GUIEvent.Caller == CloseButton)
 				{
-					setVisible(false);	// this is a workaround to make sure it's no longer the hovered element, crashes on pressing 1-2 times ESC
-					Environment->setFocus(0);
-					outevent.GUIEvent.EventType = EGET_MESSAGEBOX_CANCEL;
-					Parent->OnEvent(outevent);
-					remove();
+					sendEventAndRemove(EGET_MESSAGEBOX_CANCEL);
 					return true;
 				}
 				else
 				if (event.GUIEvent.Caller == YesButton)
 				{
-					setVisible(false);	// this is a workaround to make sure it's no longer the hovered element, crashes on pressing 1-2 times ESC
-					Environment->setFocus(0);
-					outevent.GUIEvent.EventType = EGET_MESSAGEBOX_YES;
-					Parent->OnEvent(outevent);
-					remove();
+					sendEventAndRemove(EGET_MESSAGEBOX_YES);
 					return true;
 				}
 				else
 				if (event.GUIEvent.Caller == NoButton)
 				{
-					setVisible(false);	// this is a workaround to make sure it's no longer the hovered element, crashes on pressing 1-2 times ESC
-					Environment->setFocus(0);
-					outevent.GUIEvent.EventType = EGET_MESSAGEBOX_NO;
-					Parent->OnEvent(outevent);
-					remove();
+					sendEventAndRemove(EGET_MESSAGEBOX_NO);
 					return true;
 				}
 			}
@@ -410,6 +373,27 @@ bool CGUIMessageBox::OnEvent(const SEvent& event)
 	}
 
 	return CGUIWindow::OnEvent(event);
+}
+
+
+void CGUIMessageBox::sendEventAndRemove(EGUI_EVENT_TYPE type)
+{
+	grab();
+	setVisible(false);	// this is a workaround to make sure it's no longer the hovered element, crashes on pressing 1-2 times ESC
+	Environment->setFocus(0);
+
+	if (Parent)
+	{
+		SEvent event;
+		event.EventType = EET_GUI_EVENT;
+		event.GUIEvent.Caller = this;
+		event.GUIEvent.Element = 0;
+		event.GUIEvent.EventType = type;
+		Parent->OnEvent(event);
+	}
+
+	remove();
+	drop();
 }
 
 

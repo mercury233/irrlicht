@@ -998,10 +998,14 @@ void CGUIEditBox::draw()
 void CGUIEditBox::setText(const wchar_t* text)
 {
 	Text = text;
-	if (u32(CursorPos) > Text.size())
-		CursorPos = Text.size();
 	HScrollPos = 0;
 	breakText();
+
+	const s32 textSize = (s32)Text.size();
+	CursorPos = core::max_(0, core::min_(CursorPos, textSize));
+	MarkBegin = core::max_(0, core::min_(MarkBegin, textSize));
+	MarkEnd = core::max_(0, core::min_(MarkEnd, textSize));
+	calculateScrollPos();
 }
 
 
@@ -1049,7 +1053,16 @@ void CGUIEditBox::setMax(u32 max)
 	Max = max;
 
 	if (Text.size() > Max && Max != 0)
+	{
 		Text = Text.subString(0, Max);
+		breakText();
+
+		const s32 textSize = (s32)Text.size();
+		CursorPos = core::max_(0, core::min_(CursorPos, textSize));
+		MarkBegin = core::max_(0, core::min_(MarkBegin, textSize));
+		MarkEnd = core::max_(0, core::min_(MarkEnd, textSize));
+		calculateScrollPos();
+	}
 }
 
 

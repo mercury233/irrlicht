@@ -1,5 +1,7 @@
 --------------------------
 Changes in 1.8.6
+- Bugfix: core::string::append(const T* const other, u32 length) now ensures string stays 0-terminated
+  Also it doesn't try to find out the string length of the passed string first anymore (which may not be 0-terminated at all)
 - Bugfix: CGUITabControl can hide control buttons again when resizing element while it was scrolled already
   Thanks @Mercury233 for the patch (#332 - 6)
 - Bugfix: IrrlichtDevice::isWindowMinimized no longer returns true when it's maximized on Windows.

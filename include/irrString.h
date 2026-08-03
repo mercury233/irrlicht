@@ -653,24 +653,27 @@ public:
 
 		u32 len = 0;
 		const T* p = other;
-		while(*p)
+		while(*p && len < length)
 		{
 			++len;
 			++p;
 		}
-		if (len > length)
-			len = length;
+		if ( len == 0 )
+			return *this;
 
-		if (used + len > allocated)
-			reallocate(used + len);
+		const u32 newUsed = used + len;
+		if ( newUsed < used ) // avoid overflow
+			return *this;
 
-		--used;
-		++len;
+		if (newUsed > allocated)
+			reallocate(newUsed);
 
+		const u32 start = used-1;
 		for (u32 l=0; l<len; ++l)
-			array[l+used] = *(other+l);
+			array[l+start] = *(other+l);
 
-		used += len;
+		used = newUsed;
+		array[used-1] = 0;
 
 		return *this;
 	}

@@ -196,9 +196,7 @@ public:
 
 						GLenum textarget = currentTexture->getOpenGLTextureTarget(CubeSurfaces.empty() ? 0 : (u32)CubeSurfaces[i]);
 						Driver->irrGlFramebufferTexture2D(GL_FRAMEBUFFER, AssignedTextures[i], textarget, textureID, 0);
-#ifdef _DEBUG
-						Driver->testGLError(__LINE__);
-#endif
+						// Driver->testGLError(__LINE__);
 					}
 					else if (AssignedTextures[i] != GL_NONE)
 					{
@@ -264,9 +262,7 @@ public:
 					AssignedDepth = false;
 					AssignedStencil = false;
 				}
-#ifdef _DEBUG
-				Driver->testGLError(__LINE__);
-#endif
+				// Driver->testGLError(__LINE__);
 
 				RequestDepthStencilUpdate = false;
 			}
@@ -288,10 +284,7 @@ public:
 					Driver->irrGlDrawBuffers(bufferCount, AssignedTextures.pointer());
 				}
 
-#ifdef _DEBUG
-				Driver->testGLError(__LINE__);
-#endif
-
+				// Driver->testGLError(__LINE__);
 			}
 
 #ifdef _DEBUG

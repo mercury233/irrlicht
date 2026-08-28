@@ -1,5 +1,8 @@
 --------------------------
 Changes in 1.9 (not yet released)
+- irr::string::findFirst and findFirstChar functions now take a startPos parameter. findNext can be fully deprecated in future.
+- Bugfix: core::string::append(const T* const other, u32 length) now ensures string stays 0-terminated
+  Also it doesn't try to find out the string length of the passed string first anymore (which may not be 0-terminated at all)
 - ISceneCollisionManager::getSceneNodeFromRayBB can now return the distance to the nearest hit
 - Several fixes & changes in CGUIStaticText::breakText(). Thanks @Mercury233 for patch (#335)
 - Add support for render target textures with mipmaps (on OpenGL and D3D9)

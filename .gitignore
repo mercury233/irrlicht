@@ -7,3 +7,4 @@ Thumbs.db
 !/lib/*/readme.txt
 
 /premake*.lua
+/defines.lua

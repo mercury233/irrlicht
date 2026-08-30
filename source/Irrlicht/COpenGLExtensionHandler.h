@@ -995,6 +995,7 @@ class COpenGLExtensionHandler
 
 	// constructor
 	COpenGLExtensionHandler();
+	static void setProcAddressLoader(void* (*loader)(const char*)) { ProcAddressLoader = loader; }
 
 	// deferred initialization
 	void initExtensions(bool stencilBuffer);
@@ -1224,6 +1225,7 @@ class COpenGLExtensionHandler
 	bool FeatureAvailable[IRR_OpenGL_Feature_Count];
 
 	protected:
+		static void* (*ProcAddressLoader)(const char*);
 		COpenGLCoreFeature Feature;
 
 	#if defined(_IRR_OPENGL_USE_EXTPOINTER_)

@@ -64,6 +64,8 @@
 
 namespace irr
 {
+	void setActiveWindowScaleFactor(f32 scale);
+
 	f32 getX11WindowScaleFactor()
 	{
 #ifdef _IRR_COMPILE_WITH_X11_
@@ -158,9 +160,10 @@ CIrrDeviceLinux::CIrrDeviceLinux(const SIrrlichtCreationParameters& param)
 	UseXVidMode(false), UseXRandR(false), UseGLXWindow(false),
 	ExternalWindow(false), AutorepeatSupport(0)
 {
-	#ifdef _DEBUG
+#ifdef _DEBUG
 	setDebugName("CIrrDeviceLinux");
-	#endif
+#endif
+	setActiveWindowScaleFactor(WindowScaleFactor);
 
 	// print version, distribution etc.
 	// thx to LynxLuna for pointing me to the uname function
@@ -289,6 +292,7 @@ CIrrDeviceLinux::~CIrrDeviceLinux()
 		}
 	}
 #endif
+	setActiveWindowScaleFactor(0.f);
 }
 
 

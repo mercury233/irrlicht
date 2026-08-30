@@ -16,6 +16,7 @@ namespace video
 {
 
 bool COpenGLExtensionHandler::needsDSAFramebufferHack = true;
+void* (*COpenGLExtensionHandler::ProcAddressLoader)(const char*) = 0;
 
 COpenGLExtensionHandler::COpenGLExtensionHandler() :
 		StencilBuffer(false), TextureCompressionExtension(false), MaxLights(1),
@@ -399,6 +400,8 @@ void COpenGLExtensionHandler::initExtensions(bool stencilBuffer)
 	#define IRR_OGL_LOAD_EXTENSION(x) wglGetProcAddress(reinterpret_cast<const char*>(x))
 #elif defined(_IRR_COMPILE_WITH_SDL_DEVICE_) && !defined(_IRR_COMPILE_WITH_X11_DEVICE_)
 	#define IRR_OGL_LOAD_EXTENSION(x) SDL_GL_GetProcAddress(reinterpret_cast<const char*>(x))
+#elif defined(_IRR_COMPILE_WITH_WAYLAND_DEVICE_) && !defined(_IRR_COMPILE_WITH_X11_DEVICE_)
+	#define IRR_OGL_LOAD_EXTENSION(x) ProcAddressLoader(reinterpret_cast<const char*>(x))
 #else
 	// Accessing the correct function is quite complex
 	// All libraries should support the ARB version, however
@@ -420,9 +423,9 @@ void COpenGLExtensionHandler::initExtensions(bool stencilBuffer)
 		else
 	#endif
 			IRR_OGL_LOAD_EXTENSION_FUNCP=glXGetProcAddressARB;
-		#define IRR_OGL_LOAD_EXTENSION(X) IRR_OGL_LOAD_EXTENSION_FUNCP(reinterpret_cast<const GLubyte*>(X))
+		#define IRR_OGL_LOAD_EXTENSION(X) (ProcAddressLoader ? ProcAddressLoader(reinterpret_cast<const char*>(X)) : reinterpret_cast<void*>(IRR_OGL_LOAD_EXTENSION_FUNCP(reinterpret_cast<const GLubyte*>(X))))
 	#else
-		#define IRR_OGL_LOAD_EXTENSION(X) glXGetProcAddressARB(reinterpret_cast<const GLubyte*>(X))
+		#define IRR_OGL_LOAD_EXTENSION(X) (ProcAddressLoader ? ProcAddressLoader(reinterpret_cast<const char*>(X)) : reinterpret_cast<void*>(glXGetProcAddressARB(reinterpret_cast<const GLubyte*>(X))))
 	#endif // workaround
 #endif // Windows, SDL, or Linux
 

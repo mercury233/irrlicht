@@ -13,6 +13,7 @@ namespace irr
 {
 	class CIrrDeviceWin32;
 	class CIrrDeviceLinux;
+	class CIrrDeviceLinuxWayland;
 	class CIrrDeviceSDL;
 	class CIrrDeviceMacOSX;
 }
@@ -43,8 +44,8 @@ namespace video
 			EOAP_SHADER_TO_FIXED // switch from programmable to fixed pipeline.
 		};
 
-#if defined(_IRR_COMPILE_WITH_WINDOWS_DEVICE_) || defined(_IRR_COMPILE_WITH_X11_DEVICE_) || defined(_IRR_COMPILE_WITH_OSX_DEVICE_)
-		COpenGLDriver(const SIrrlichtCreationParameters& params, io::IFileSystem* io, IContextManager* contextManager, f32 windowScaleFactor=1.f);
+#if defined(_IRR_COMPILE_WITH_WINDOWS_DEVICE_) || defined(_IRR_COMPILE_WITH_X11_DEVICE_) || defined(_IRR_COMPILE_WITH_WAYLAND_DEVICE_) || defined(_IRR_COMPILE_WITH_OSX_DEVICE_)
+		COpenGLDriver(const SIrrlichtCreationParameters& params, io::IFileSystem* io, IContextManager* contextManager, f32 windowScaleFactor=1.f, E_DEVICE_TYPE deviceType=EIDT_BEST);
 #endif
 
 #ifdef _IRR_COMPILE_WITH_SDL_DEVICE_
@@ -260,6 +261,7 @@ namespace video
 		//! Only used by the internal engine. Used to notify the driver that
 		//! the window was resized.
 		virtual void OnResize(const core::dimension2d<u32>& size) IRR_OVERRIDE;
+		void setWindowScaleFactor(f32 scale);
 
 		//! Returns type of video driver
 		virtual E_DRIVER_TYPE getDriverType() const IRR_OVERRIDE;
@@ -463,9 +465,13 @@ namespace video
 		//! helper function doing the actual rendering.
 		void renderArray(const void* indexList, u32 primitiveCount,
 				scene::E_PRIMITIVE_TYPE pType, E_INDEX_TYPE iType);
+		void updateWindowFramebufferSize();
+		s32 scaleWindowX(s32 value) const;
+		s32 scaleWindowY(s32 value) const;
 
 		COpenGLCacheHandler* CacheHandler;
 		f32 WindowScaleFactor;
+		core::dimension2d<u32> WindowFramebufferSize;
 
 		core::stringw Name;
 		core::matrix4 Matrices[ETS_COUNT];

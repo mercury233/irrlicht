@@ -11,6 +11,7 @@ namespace irr
 {
 
 class CIrrDeviceLinux;
+class CIrrDeviceLinuxWayland;
 
 //! The Operating system operator provides operation system specific methods and information.
 class COSOperator : public IOSOperator
@@ -20,6 +21,9 @@ public:
 	// constructor
 #if defined(_IRR_COMPILE_WITH_X11_DEVICE_)
 	COSOperator(const core::stringc& osversion, CIrrDeviceLinux* device);
+#endif
+#if defined(_IRR_COMPILE_WITH_WAYLAND_DEVICE_)
+	COSOperator(const core::stringc& osversion, CIrrDeviceLinuxWayland* device);
 #endif
 	COSOperator(const core::stringc& osversion);
 
@@ -51,6 +55,9 @@ private:
 
 #if defined(_IRR_COMPILE_WITH_X11_DEVICE_)
 	CIrrDeviceLinux * IrrDeviceLinux;
+#endif
+#if defined(_IRR_COMPILE_WITH_WAYLAND_DEVICE_)
+	CIrrDeviceLinuxWayland * IrrDeviceWayland;
 #endif
 
 };

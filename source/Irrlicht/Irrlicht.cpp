@@ -40,6 +40,15 @@ static const char* const copyright = "Irrlicht Engine (c) 2002-2017 Nikolaus Geb
 
 namespace irr
 {
+	extern "C" IRRLICHT_API f32 IRRCALLCONV getWindowScaleFactor()
+	{
+#ifdef _IRR_COMPILE_WITH_X11_DEVICE_
+		return getX11WindowScaleFactor();
+#else
+		return 1.f;
+#endif
+	}
+
 	//! stub for calling createDeviceEx
 	IRRLICHT_API IrrlichtDevice* IRRCALLCONV createDevice(video::E_DRIVER_TYPE driverType,
 			const core::dimension2d<u32>& windowSize,

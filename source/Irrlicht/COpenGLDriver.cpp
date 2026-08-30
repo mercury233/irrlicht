@@ -33,8 +33,8 @@ namespace video
 const u16 COpenGLDriver::Quad2DIndices[4] = { 0, 1, 2, 3 };
 
 #if defined(_IRR_COMPILE_WITH_WINDOWS_DEVICE_) || defined(_IRR_COMPILE_WITH_X11_DEVICE_) || defined(_IRR_COMPILE_WITH_OSX_DEVICE_)
-COpenGLDriver::COpenGLDriver(const SIrrlichtCreationParameters& params, io::IFileSystem* io, IContextManager* contextManager)
-	: CNullDriver(io, params.WindowSize), COpenGLExtensionHandler(), CacheHandler(0), CurrentRenderMode(ERM_NONE), ResetRenderStates(true),
+COpenGLDriver::COpenGLDriver(const SIrrlichtCreationParameters& params, io::IFileSystem* io, IContextManager* contextManager, f32 windowScaleFactor)
+	: CNullDriver(io, params.WindowSize), COpenGLExtensionHandler(), CacheHandler(0), WindowScaleFactor(windowScaleFactor), CurrentRenderMode(ERM_NONE), ResetRenderStates(true),
 	Transformation3DChanged(true), AntiAlias(params.AntiAlias), ColorFormat(ECF_R8G8B8), ActivePipelineState(EOAP_FIXED), Params(params),
 	ContextManager(contextManager),
 #if defined(_IRR_COMPILE_WITH_WINDOWS_DEVICE_)
@@ -53,7 +53,7 @@ COpenGLDriver::COpenGLDriver(const SIrrlichtCreationParameters& params, io::IFil
 
 #ifdef _IRR_COMPILE_WITH_SDL_DEVICE_
 COpenGLDriver::COpenGLDriver(const SIrrlichtCreationParameters& params, io::IFileSystem* io, CIrrDeviceSDL* device)
-	: CNullDriver(io, params.WindowSize), COpenGLExtensionHandler(), CacheHandler(0),
+	: CNullDriver(io, params.WindowSize), COpenGLExtensionHandler(), CacheHandler(0), WindowScaleFactor(1.f),
 	CurrentRenderMode(ERM_NONE), ResetRenderStates(true), Transformation3DChanged(true),
 	AntiAlias(params.AntiAlias), ColorFormat(ECF_R8G8B8), ActivePipelineState(EOAP_FIXED),
 	Params(params), SDLDevice(device), ContextManager(0), DeviceType(EIDT_SDL)
@@ -142,6 +142,9 @@ bool COpenGLDriver::genericDriverInit()
 	// reset cache handler
 	delete CacheHandler;
 	CacheHandler = new COpenGLCacheHandler(this);
+	CacheHandler->setViewport(0, 0,
+		static_cast<GLsizei>(ScreenSize.Width * WindowScaleFactor + 0.5f),
+		static_cast<GLsizei>(ScreenSize.Height * WindowScaleFactor + 0.5f));
 
 	if (queryFeature(EVDF_ARB_GLSL))
 	{
@@ -1406,8 +1409,18 @@ void COpenGLDriver::draw2DImage(const video::ITexture* texture, const core::rect
 
 		glEnable(GL_SCISSOR_TEST);
 		const core::dimension2d<u32>& renderTargetSize = getCurrentRenderTargetSize();
-		glScissor(clipRect->UpperLeftCorner.X, renderTargetSize.Height - clipRect->LowerRightCorner.Y,
-			clipRect->getWidth(), clipRect->getHeight());
+		if (!CurrentRenderTarget && WindowScaleFactor != 1.f)
+		{
+			const s32 left = static_cast<s32>(clipRect->UpperLeftCorner.X * WindowScaleFactor + 0.5f);
+			const s32 right = static_cast<s32>(clipRect->LowerRightCorner.X * WindowScaleFactor + 0.5f);
+			const s32 top = static_cast<s32>(clipRect->UpperLeftCorner.Y * WindowScaleFactor + 0.5f);
+			const s32 bottom = static_cast<s32>(clipRect->LowerRightCorner.Y * WindowScaleFactor + 0.5f);
+			const s32 physicalHeight = static_cast<s32>(renderTargetSize.Height * WindowScaleFactor + 0.5f);
+			glScissor(left, physicalHeight - bottom, right - left, bottom - top);
+		}
+		else
+			glScissor(clipRect->UpperLeftCorner.X, renderTargetSize.Height - clipRect->LowerRightCorner.Y,
+				clipRect->getWidth(), clipRect->getHeight());
 	}
 
 	Quad2DVertices[0].Color = useColor[0];
@@ -1746,8 +1759,18 @@ void COpenGLDriver::draw2DImageBatch(const video::ITexture* texture,
 
 		glEnable(GL_SCISSOR_TEST);
 		const core::dimension2d<u32>& renderTargetSize = getCurrentRenderTargetSize();
-		glScissor(clipRect->UpperLeftCorner.X, renderTargetSize.Height-clipRect->LowerRightCorner.Y,
-			clipRect->getWidth(),clipRect->getHeight());
+		if (!CurrentRenderTarget && WindowScaleFactor != 1.f)
+		{
+			const s32 left = static_cast<s32>(clipRect->UpperLeftCorner.X * WindowScaleFactor + 0.5f);
+			const s32 right = static_cast<s32>(clipRect->LowerRightCorner.X * WindowScaleFactor + 0.5f);
+			const s32 top = static_cast<s32>(clipRect->UpperLeftCorner.Y * WindowScaleFactor + 0.5f);
+			const s32 bottom = static_cast<s32>(clipRect->LowerRightCorner.Y * WindowScaleFactor + 0.5f);
+			const s32 physicalHeight = static_cast<s32>(renderTargetSize.Height * WindowScaleFactor + 0.5f);
+			glScissor(left, physicalHeight - bottom, right - left, bottom - top);
+		}
+		else
+			glScissor(clipRect->UpperLeftCorner.X, renderTargetSize.Height-clipRect->LowerRightCorner.Y,
+				clipRect->getWidth(),clipRect->getHeight());
 	}
 
 	const core::dimension2d<u32>& ss = texture->getOriginalSize();
@@ -3248,7 +3271,19 @@ void COpenGLDriver::setViewPort(const core::rect<s32>& area, bool clipToRenderTa
 	}
 
 	if (vp.getHeight() > 0 && vp.getWidth() > 0)
-		CacheHandler->setViewport(vp.UpperLeftCorner.X, getCurrentRenderTargetSize().Height - vp.UpperLeftCorner.Y - vp.getHeight(), vp.getWidth(), vp.getHeight());
+	{
+		if (!CurrentRenderTarget && WindowScaleFactor != 1.f)
+		{
+			const s32 left = static_cast<s32>(vp.UpperLeftCorner.X * WindowScaleFactor + 0.5f);
+			const s32 right = static_cast<s32>(vp.LowerRightCorner.X * WindowScaleFactor + 0.5f);
+			const s32 top = static_cast<s32>(vp.UpperLeftCorner.Y * WindowScaleFactor + 0.5f);
+			const s32 bottom = static_cast<s32>(vp.LowerRightCorner.Y * WindowScaleFactor + 0.5f);
+			const s32 physicalHeight = static_cast<s32>(ScreenSize.Height * WindowScaleFactor + 0.5f);
+			CacheHandler->setViewport(left, physicalHeight - bottom, right - left, bottom - top);
+		}
+		else
+			CacheHandler->setViewport(vp.UpperLeftCorner.X, getCurrentRenderTargetSize().Height - vp.UpperLeftCorner.Y - vp.getHeight(), vp.getWidth(), vp.getHeight());
+	}
 
 	ViewPort = vp;
 }
@@ -3647,7 +3682,9 @@ bool COpenGLDriver::needsTransparentRenderPass(const irr::video::SMaterial& mate
 void COpenGLDriver::OnResize(const core::dimension2d<u32>& size)
 {
 	CNullDriver::OnResize(size);
-	CacheHandler->setViewport(0, 0, size.Width, size.Height);
+	CacheHandler->setViewport(0, 0,
+		static_cast<GLsizei>(size.Width * WindowScaleFactor + 0.5f),
+		static_cast<GLsizei>(size.Height * WindowScaleFactor + 0.5f));
 	Transformation3DChanged = true;
 }
 
@@ -3925,7 +3962,9 @@ bool COpenGLDriver::setRenderTargetEx(IRenderTarget* target, u16 clearFlag, SCol
 
 		destRenderTargetSize = core::dimension2d<u32>(0, 0);
 
-		CacheHandler->setViewport(0, 0, ScreenSize.Width, ScreenSize.Height);
+		CacheHandler->setViewport(0, 0,
+			static_cast<GLsizei>(ScreenSize.Width * WindowScaleFactor + 0.5f),
+			static_cast<GLsizei>(ScreenSize.Height * WindowScaleFactor + 0.5f));
 	}
 
 	if (CurrentRenderTargetSize != destRenderTargetSize)
@@ -4497,6 +4536,25 @@ namespace video
 		return 0;
 #endif
 	}
+
+#ifdef _IRR_COMPILE_WITH_X11_DEVICE_
+	IVideoDriver* createOpenGLDriver(const SIrrlichtCreationParameters& params, io::IFileSystem* io, IContextManager* contextManager, f32 windowScaleFactor)
+	{
+#ifdef _IRR_COMPILE_WITH_OPENGL_
+		COpenGLDriver* ogl = new COpenGLDriver(params, io, contextManager, windowScaleFactor);
+
+		if (!ogl->initDriver())
+		{
+			ogl->drop();
+			ogl = 0;
+		}
+
+		return ogl;
+#else
+		return 0;
+#endif
+	}
+#endif
 #endif
 
 // -----------------------------------

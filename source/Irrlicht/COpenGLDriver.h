@@ -44,7 +44,7 @@ namespace video
 		};
 
 #if defined(_IRR_COMPILE_WITH_WINDOWS_DEVICE_) || defined(_IRR_COMPILE_WITH_X11_DEVICE_) || defined(_IRR_COMPILE_WITH_OSX_DEVICE_)
-		COpenGLDriver(const SIrrlichtCreationParameters& params, io::IFileSystem* io, IContextManager* contextManager);
+		COpenGLDriver(const SIrrlichtCreationParameters& params, io::IFileSystem* io, IContextManager* contextManager, f32 windowScaleFactor=1.f);
 #endif
 
 #ifdef _IRR_COMPILE_WITH_SDL_DEVICE_
@@ -465,6 +465,7 @@ namespace video
 				scene::E_PRIMITIVE_TYPE pType, E_INDEX_TYPE iType);
 
 		COpenGLCacheHandler* CacheHandler;
+		f32 WindowScaleFactor;
 
 		core::stringw Name;
 		core::matrix4 Matrices[ETS_COUNT];

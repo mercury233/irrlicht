@@ -8,6 +8,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
 #include <sys/utsname.h>
 #include <time.h>
 #include <locale.h>
@@ -26,6 +28,7 @@
 #include "IGUISpriteBank.h"
 #include <X11/XKBlib.h>
 #include <X11/Xatom.h>
+#include <X11/Xresource.h>
 
 #if defined(_IRR_LINUX_X11_XINPUT2_)
 #include <X11/extensions/XInput2.h>
@@ -61,10 +64,57 @@
 
 namespace irr
 {
+	f32 getX11WindowScaleFactor()
+	{
+#ifdef _IRR_COMPILE_WITH_X11_
+		Display* display = XOpenDisplay(0);
+		if (!display)
+			return 1.f;
+
+		f32 scale = 1.f;
+		XrmInitialize();
+		const char* resourceString = XResourceManagerString(display);
+		if (resourceString)
+		{
+			XrmDatabase database = XrmGetStringDatabase(resourceString);
+			if (database)
+			{
+				char* resourceType = 0;
+				XrmValue value = {};
+				if (XrmGetResource(database, "Xft.dpi", "Xft.Dpi", &resourceType, &value) && value.addr && value.size)
+				{
+					char dpiString[64];
+					const size_t length = value.size < sizeof(dpiString) ? value.size : sizeof(dpiString) - 1;
+					memcpy(dpiString, value.addr, length);
+					dpiString[length] = 0;
+
+					char* end = 0;
+					const double dpi = strtod(dpiString, &end);
+					while (*end && isspace(static_cast<unsigned char>(*end)))
+						++end;
+					if (end != dpiString && !*end && dpi > 0.0 && dpi <= 768.0)
+					{
+						scale = static_cast<f32>(dpi / 96.0);
+						if (scale < 1.f)
+							scale = 1.f;
+						else if (scale > 8.f)
+							scale = 8.f;
+					}
+				}
+				XrmDestroyDatabase(database);
+			}
+		}
+		XCloseDisplay(display);
+		return scale;
+#else
+		return 1.f;
+#endif
+	}
+
 	namespace video
 	{
 #ifdef _IRR_COMPILE_WITH_OPENGL_
-		IVideoDriver* createOpenGLDriver(const irr::SIrrlichtCreationParameters& params, io::IFileSystem* io, IContextManager* contextManager);
+		IVideoDriver* createOpenGLDriver(const irr::SIrrlichtCreationParameters& params, io::IFileSystem* io, IContextManager* contextManager, f32 windowScaleFactor);
 #endif
 	}
 } // end namespace irr
@@ -101,7 +151,9 @@ CIrrDeviceLinux::CIrrDeviceLinux(const SIrrlichtCreationParameters& param)
 	Context(0),
 #endif
 #endif
-	Width(param.WindowSize.Width), Height(param.WindowSize.Height),
+	WindowScaleFactor(param.DriverType == video::EDT_OPENGL && !param.Fullscreen && !param.WindowId ? getX11WindowScaleFactor() : 1.f),
+	Width(static_cast<u32>(param.WindowSize.Width * WindowScaleFactor + 0.5f)),
+	Height(static_cast<u32>(param.WindowSize.Height * WindowScaleFactor + 0.5f)),
 	WindowHasFocus(false), WindowMinimized(false),
 	UseXVidMode(false), UseXRandR(false), UseGLXWindow(false),
 	ExternalWindow(false), AutorepeatSupport(0)
@@ -565,8 +617,8 @@ bool CIrrDeviceLinux::createWindow()
 
 	XGetGeometry(XDisplay, XWindow, &tmp, &x, &y, &Width, &Height, &borderWidth, &bits);
 	CreationParams.Bits = bits;
-	CreationParams.WindowSize.Width = Width;
-	CreationParams.WindowSize.Height = Height;
+	CreationParams.WindowSize.Width = scaleToLogicalSize(Width);
+	CreationParams.WindowSize.Height = scaleToLogicalSize(Height);
 
 	StdHints = XAllocSizeHints();
 	long num;
@@ -630,7 +682,7 @@ void CIrrDeviceLinux::createDriver()
 
 			ContextManager->initialize(CreationParams, data);
 
-			VideoDriver = video::createOpenGLDriver(CreationParams, FileSystem, ContextManager);
+			VideoDriver = video::createOpenGLDriver(CreationParams, FileSystem, ContextManager, WindowScaleFactor);
 		}
 #else
 		os::Printer::log("No OpenGL support compiled in.", ELL_ERROR);
@@ -877,8 +929,8 @@ void CIrrDeviceLinux::updateXIMPosition(int x, int y)
 		return;
 
 	XPoint spot;
-	spot.x = (short)x;
-	spot.y = (short)y;
+	spot.x = (short)scaleToPhysicalPosition(x);
+	spot.y = (short)scaleToPhysicalPosition(y);
 
 	XVaNestedList preeditAttr = XVaCreateNestedList(0,
 		XNSpotLocation, &spot,
@@ -987,7 +1039,7 @@ bool CIrrDeviceLinux::run()
 					}
 
 					if (VideoDriver)
-						VideoDriver->OnResize(core::dimension2d<u32>(Width, Height));
+						VideoDriver->OnResize(core::dimension2d<u32>(scaleToLogicalSize(Width), scaleToLogicalSize(Height)));
 				}
 				break;
 
@@ -1014,8 +1066,8 @@ bool CIrrDeviceLinux::run()
 			case MotionNotify:
 				irrevent.EventType = irr::EET_MOUSE_INPUT_EVENT;
 				irrevent.MouseInput.Event = irr::EMIE_MOUSE_MOVED;
-				irrevent.MouseInput.X = event.xbutton.x;
-				irrevent.MouseInput.Y = event.xbutton.y;
+				irrevent.MouseInput.X = scaleToLogicalPosition(event.xbutton.x);
+				irrevent.MouseInput.Y = scaleToLogicalPosition(event.xbutton.y);
 				irrevent.MouseInput.Control = (event.xkey.state & ControlMask) != 0;
 				irrevent.MouseInput.Shift = (event.xkey.state & ShiftMask) != 0;
 
@@ -1031,8 +1083,8 @@ bool CIrrDeviceLinux::run()
 			case ButtonRelease:
 
 				irrevent.EventType = irr::EET_MOUSE_INPUT_EVENT;
-				irrevent.MouseInput.X = event.xbutton.x;
-				irrevent.MouseInput.Y = event.xbutton.y;
+				irrevent.MouseInput.X = scaleToLogicalPosition(event.xbutton.x);
+				irrevent.MouseInput.Y = scaleToLogicalPosition(event.xbutton.y);
 				irrevent.MouseInput.Control = (event.xkey.state & ControlMask) != 0;
 				irrevent.MouseInput.Shift = (event.xkey.state & ShiftMask) != 0;
 
@@ -1088,7 +1140,7 @@ bool CIrrDeviceLinux::run()
 					// Update XIM preedit spot so the IME candidate window appears
 					// near where the user clicked (best approximation without GUI layer access).
 					if (event.type == ButtonPress)
-						updateXIMPosition(event.xbutton.x, event.xbutton.y);
+						updateXIMPosition(irrevent.MouseInput.X, irrevent.MouseInput.Y);
 
 					postEventFromUser(irrevent);
 
@@ -1326,8 +1378,8 @@ bool CIrrDeviceLinux::run()
 						irrevent.TouchInput.Event = cookie->evtype == XI_TouchUpdate ? ETIE_MOVED : (cookie->evtype == XI_TouchBegin ? ETIE_PRESSED_DOWN : ETIE_LEFT_UP);
 
 						irrevent.TouchInput.ID = de->detail;
-						irrevent.TouchInput.X = de->event_x;
-						irrevent.TouchInput.Y = de->event_y;
+						irrevent.TouchInput.X = scaleToLogicalPosition(static_cast<s32>(de->event_x));
+						irrevent.TouchInput.Y = scaleToLogicalPosition(static_cast<s32>(de->event_y));
 
 						postEventFromUser(irrevent);
 					}
@@ -1523,8 +1575,8 @@ void CIrrDeviceLinux::setWindowSize(const irr::core::dimension2d<u32>& size)
 		return;
 
 	XWindowChanges values;
-	values.width = size.Width;
-	values.height = size.Height;
+	values.width = scaleToPhysicalSize(size.Width);
+	values.height = scaleToPhysicalSize(size.Height);
 	XConfigureWindow(XDisplay, XWindow, CWWidth | CWHeight, &values);
 	XFlush(XDisplay);
 #endif // #ifdef _IRR_COMPILE_WITH_X11_
@@ -1676,7 +1728,7 @@ core::position2di CIrrDeviceLinux::getWindowPosition()
 	Window child;
 	XTranslateCoordinates(XDisplay, XWindow, DefaultRootWindow(XDisplay), 0, 0, &wx, &wy, &child);
 #endif
-	return core::position2di(wx, wy);
+	return core::position2di(scaleToLogicalPosition(wx), scaleToLogicalPosition(wy));
 }
 
 void CIrrDeviceLinux::createKeyMap()

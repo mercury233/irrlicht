@@ -64,6 +64,14 @@ struct SExposedVideoData
 		unsigned long GLXWindow;
 	};
 
+	struct SOpenGLWayland
+	{
+		void* WaylandDisplay;
+		void* WaylandSurface;
+		void* EGLDisplay;
+		void* EGLContext;
+	};
+
     struct SOpenGLOSX
     {
         //! The NSOpenGLContext object.
@@ -78,6 +86,7 @@ struct SExposedVideoData
 		SD3D9 D3D9;
 		SOpenGLWin32 OpenGLWin32;
 		SOpenGLLinux OpenGLLinux;
+		SOpenGLWayland OpenGLWayland;
         SOpenGLOSX OpenGLOSX;
 	};
 };

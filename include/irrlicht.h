@@ -310,6 +310,11 @@
 //! Everything in the Irrlicht Engine can be found in this namespace.
 namespace irr
 {
+	//! Returns the window-system scale factor used for newly created windows.
+	/** On X11 this reads the Xft.dpi resource and returns dpi / 96, clamped to
+	the range 1 to 8. Platforms without a window-system scale report 1. */
+	extern "C" IRRLICHT_API f32 IRRCALLCONV getWindowScaleFactor();
+
 	//! Creates an Irrlicht device. The Irrlicht device is the root object for using the engine.
 	/** If you need more parameters to be passed to the creation of the Irrlicht Engine device,
 	use the createDeviceEx() function.

@@ -38,6 +38,8 @@ struct zwp_text_input_v3_listener
 
 namespace irr
 {
+	void initializeWaylandProtocolInterfaces(CWaylandLibrary& lib);
+
 	inline wp_fractional_scale_v1* waylandGetFractionalScale(CWaylandLibrary& lib, wp_fractional_scale_manager_v1* manager, wl_surface* surface)
 	{
 		return reinterpret_cast<wp_fractional_scale_v1*>(lib.ProxyMarshalConstructor(reinterpret_cast<wl_proxy*>(manager), 1, &wp_fractional_scale_v1_interface, 0, surface));

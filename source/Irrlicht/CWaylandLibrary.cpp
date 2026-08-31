@@ -10,16 +10,30 @@
 
 namespace irr
 {
-#define IRR_WL_LOAD(handle, member, symbol) if (!loadSymbol(handle, &member, symbol)) return false
+#define IRR_WL_LOAD(handle, member, symbol) do { if (!loadSymbol(handle, &member, symbol)) { unload(); return false; } } while (0)
+#define IRR_WL_OPEN(handle, name) do { if (!openLibrary(handle, name)) { unload(); return false; } } while (0)
 
-	CWaylandLibrary::CWaylandLibrary() : Decor(0), Error(0)
+	CWaylandLibrary::CWaylandLibrary() : WaylandClient(0), WaylandEgl(0), WaylandCursor(0), Xkbcommon(0), Egl(0), Decor(0)
 	{
 	}
 
 	CWaylandLibrary::~CWaylandLibrary()
 	{
+		unload();
+	}
+
+	void CWaylandLibrary::unload()
+	{
 #ifndef _IRR_COMPILE_WITH_WAYLAND_LINKED_DEVICE_
-		if (Decor) dlclose(Decor);
+		void** handles[] = { &Decor, &Egl, &Xkbcommon, &WaylandCursor, &WaylandEgl, &WaylandClient };
+		for (size_t i = 0; i < sizeof(handles) / sizeof(handles[0]); ++i)
+		{
+			if (*handles[i])
+			{
+				dlclose(*handles[i]);
+				*handles[i] = 0;
+			}
+		}
 #endif
 	}
 
@@ -28,7 +42,8 @@ namespace irr
 		handle = dlopen(name, RTLD_NOW | RTLD_LOCAL);
 		if (!handle)
 		{
-			Error = dlerror();
+			const char* error = dlerror();
+			Error = error ? error : name;
 			return false;
 		}
 		return true;
@@ -39,7 +54,8 @@ namespace irr
 		void* symbol = dlsym(handle, name);
 		if (!symbol)
 		{
-			Error = dlerror();
+			const char* error = dlerror();
+			Error = error ? error : name;
 			return false;
 		}
 		std::memcpy(target, &symbol, sizeof(symbol));
@@ -49,6 +65,10 @@ namespace irr
 #define IRR_WL_DIRECT(member, symbol) member = &symbol
 	bool CWaylandLibrary::load()
 	{
+		unload();
+		Error.clear();
+
+#ifdef _IRR_COMPILE_WITH_WAYLAND_LINKED_DEVICE_
 		IRR_WL_DIRECT(DisplayConnect, wl_display_connect);
 		IRR_WL_DIRECT(DisplayDisconnect, wl_display_disconnect);
 		IRR_WL_DIRECT(DisplayDispatch, wl_display_dispatch);
@@ -105,8 +125,6 @@ namespace irr
 		IRR_WL_DIRECT(XkbStateKeyGetOneSym, xkb_state_key_get_one_sym);
 		IRR_WL_DIRECT(XkbStateKeyGetUtf8, xkb_state_key_get_utf8);
 		IRR_WL_DIRECT(XkbStateUpdateMask, xkb_state_update_mask);
-
-#ifdef _IRR_COMPILE_WITH_WAYLAND_LINKED_DEVICE_
 		IRR_WL_DIRECT(DecorNew, libdecor_new);
 		IRR_WL_DIRECT(DecorUnref, libdecor_unref);
 		IRR_WL_DIRECT(DecorDispatch, libdecor_dispatch);
@@ -131,8 +149,73 @@ namespace irr
 		IRR_WL_DIRECT(DecorConfigurationGetWindowState, libdecor_configuration_get_window_state);
 		return true;
 #else
-		if (!openLibrary(Decor, "libdecor-0.so.0"))
-			return false;
+		IRR_WL_OPEN(WaylandClient, "libwayland-client.so.0");
+		IRR_WL_OPEN(WaylandEgl, "libwayland-egl.so.1");
+		IRR_WL_OPEN(WaylandCursor, "libwayland-cursor.so.0");
+		IRR_WL_OPEN(Xkbcommon, "libxkbcommon.so.0");
+		IRR_WL_OPEN(Egl, "libEGL.so.1");
+		IRR_WL_OPEN(Decor, "libdecor-0.so.0");
+
+		IRR_WL_LOAD(WaylandClient, DisplayConnect, "wl_display_connect");
+		IRR_WL_LOAD(WaylandClient, DisplayDisconnect, "wl_display_disconnect");
+		IRR_WL_LOAD(WaylandClient, DisplayDispatch, "wl_display_dispatch");
+		IRR_WL_LOAD(WaylandClient, DisplayDispatchPending, "wl_display_dispatch_pending");
+		IRR_WL_LOAD(WaylandClient, DisplayRoundtrip, "wl_display_roundtrip");
+		IRR_WL_LOAD(WaylandClient, DisplayFlush, "wl_display_flush");
+		IRR_WL_LOAD(WaylandClient, DisplayGetFd, "wl_display_get_fd");
+		IRR_WL_LOAD(WaylandClient, ProxyAddListener, "wl_proxy_add_listener");
+		IRR_WL_LOAD(WaylandClient, ProxyDestroy, "wl_proxy_destroy");
+		IRR_WL_LOAD(WaylandClient, ProxyMarshal, "wl_proxy_marshal");
+		IRR_WL_LOAD(WaylandClient, ProxyMarshalConstructor, "wl_proxy_marshal_constructor");
+		IRR_WL_LOAD(WaylandClient, ProxyMarshalConstructorVersioned, "wl_proxy_marshal_constructor_versioned");
+		IRR_WL_LOAD(WaylandClient, ProxyGetVersion, "wl_proxy_get_version");
+		IRR_WL_LOAD(WaylandClient, RegistryInterface, "wl_registry_interface");
+		IRR_WL_LOAD(WaylandClient, CompositorInterface, "wl_compositor_interface");
+		IRR_WL_LOAD(WaylandClient, SurfaceInterface, "wl_surface_interface");
+		IRR_WL_LOAD(WaylandClient, SeatInterface, "wl_seat_interface");
+		IRR_WL_LOAD(WaylandClient, PointerInterface, "wl_pointer_interface");
+		IRR_WL_LOAD(WaylandClient, KeyboardInterface, "wl_keyboard_interface");
+		IRR_WL_LOAD(WaylandClient, ShmInterface, "wl_shm_interface");
+		IRR_WL_LOAD(WaylandClient, OutputInterface, "wl_output_interface");
+		IRR_WL_LOAD(WaylandClient, DataDeviceManagerInterface, "wl_data_device_manager_interface");
+		IRR_WL_LOAD(WaylandClient, DataDeviceInterface, "wl_data_device_interface");
+		IRR_WL_LOAD(WaylandClient, DataSourceInterface, "wl_data_source_interface");
+		IRR_WL_LOAD(WaylandClient, DataOfferInterface, "wl_data_offer_interface");
+
+		IRR_WL_LOAD(WaylandEgl, EglWindowCreate, "wl_egl_window_create");
+		IRR_WL_LOAD(WaylandEgl, EglWindowDestroy, "wl_egl_window_destroy");
+		IRR_WL_LOAD(WaylandEgl, EglWindowResize, "wl_egl_window_resize");
+
+		IRR_WL_LOAD(WaylandCursor, CursorThemeLoad, "wl_cursor_theme_load");
+		IRR_WL_LOAD(WaylandCursor, CursorThemeDestroy, "wl_cursor_theme_destroy");
+		IRR_WL_LOAD(WaylandCursor, CursorThemeGetCursor, "wl_cursor_theme_get_cursor");
+		IRR_WL_LOAD(WaylandCursor, CursorImageGetBuffer, "wl_cursor_image_get_buffer");
+
+		IRR_WL_LOAD(Egl, EglGetDisplay, "eglGetDisplay");
+		IRR_WL_LOAD(Egl, EglInitialize, "eglInitialize");
+		IRR_WL_LOAD(Egl, EglTerminate, "eglTerminate");
+		IRR_WL_LOAD(Egl, EglBindAPI, "eglBindAPI");
+		IRR_WL_LOAD(Egl, EglChooseConfig, "eglChooseConfig");
+		IRR_WL_LOAD(Egl, EglCreateWindowSurface, "eglCreateWindowSurface");
+		IRR_WL_LOAD(Egl, EglDestroySurface, "eglDestroySurface");
+		IRR_WL_LOAD(Egl, EglCreateContext, "eglCreateContext");
+		IRR_WL_LOAD(Egl, EglDestroyContext, "eglDestroyContext");
+		IRR_WL_LOAD(Egl, EglMakeCurrent, "eglMakeCurrent");
+		IRR_WL_LOAD(Egl, EglSwapBuffers, "eglSwapBuffers");
+		IRR_WL_LOAD(Egl, EglSwapInterval, "eglSwapInterval");
+		IRR_WL_LOAD(Egl, EglGetProcAddress, "eglGetProcAddress");
+		IRR_WL_LOAD(Egl, EglGetError, "eglGetError");
+
+		IRR_WL_LOAD(Xkbcommon, XkbContextNew, "xkb_context_new");
+		IRR_WL_LOAD(Xkbcommon, XkbContextUnref, "xkb_context_unref");
+		IRR_WL_LOAD(Xkbcommon, XkbKeymapNewFromString, "xkb_keymap_new_from_string");
+		IRR_WL_LOAD(Xkbcommon, XkbKeymapUnref, "xkb_keymap_unref");
+		IRR_WL_LOAD(Xkbcommon, XkbKeymapKeyRepeats, "xkb_keymap_key_repeats");
+		IRR_WL_LOAD(Xkbcommon, XkbStateNew, "xkb_state_new");
+		IRR_WL_LOAD(Xkbcommon, XkbStateUnref, "xkb_state_unref");
+		IRR_WL_LOAD(Xkbcommon, XkbStateKeyGetOneSym, "xkb_state_key_get_one_sym");
+		IRR_WL_LOAD(Xkbcommon, XkbStateKeyGetUtf8, "xkb_state_key_get_utf8");
+		IRR_WL_LOAD(Xkbcommon, XkbStateUpdateMask, "xkb_state_update_mask");
 
 		IRR_WL_LOAD(Decor, DecorNew, "libdecor_new");
 		IRR_WL_LOAD(Decor, DecorUnref, "libdecor_unref");
@@ -208,6 +291,7 @@ namespace irr
 	}
 
 #undef IRR_WL_DIRECT
+#undef IRR_WL_OPEN
 #undef IRR_WL_LOAD
 }
 

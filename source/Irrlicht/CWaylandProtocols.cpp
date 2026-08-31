@@ -60,7 +60,7 @@
 static const wl_interface* fractional_scale_v1_types[] = {
 	0,
 	&wp_fractional_scale_v1_interface,
-	&wl_surface_interface,
+	0,
 };
 
 static const wl_message wp_fractional_scale_manager_v1_requests[] = {
@@ -94,7 +94,7 @@ static const wl_interface* viewporter_types[] = {
 	0,
 	0,
 	&wp_viewport_interface,
-	&wl_surface_interface,
+	0,
 };
 
 static const wl_message wp_viewporter_requests[] = {
@@ -125,10 +125,10 @@ static const wl_interface* text_input_unstable_v3_types[] = {
 	0,
 	0,
 	0,
-	&wl_surface_interface,
-	&wl_surface_interface,
+	0,
+	0,
 	&zwp_text_input_v3_interface,
-	&wl_seat_interface,
+	0,
 };
 
 static const wl_message zwp_text_input_v3_requests[] = {
@@ -167,5 +167,17 @@ const wl_interface zwp_text_input_manager_v3_interface = {
 	2, zwp_text_input_manager_v3_requests,
 	0, 0,
 };
+
+namespace irr
+{
+	void initializeWaylandProtocolInterfaces(CWaylandLibrary& lib)
+	{
+		fractional_scale_v1_types[2] = lib.SurfaceInterface;
+		viewporter_types[5] = lib.SurfaceInterface;
+		text_input_unstable_v3_types[4] = lib.SurfaceInterface;
+		text_input_unstable_v3_types[5] = lib.SurfaceInterface;
+		text_input_unstable_v3_types[7] = lib.SeatInterface;
+	}
+}
 
 #endif

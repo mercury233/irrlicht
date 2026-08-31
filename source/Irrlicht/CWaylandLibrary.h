@@ -12,6 +12,7 @@
 #include <wayland-cursor.h>
 #include <xkbcommon/xkbcommon.h>
 #include <stdint.h>
+#include <string>
 
 namespace irr
 {
@@ -22,7 +23,7 @@ namespace irr
 		~CWaylandLibrary();
 		bool load();
 		bool hasDecorationPlugin() const;
-		const char* getError() const { return Error; }
+		const char* getError() const { return Error.empty() ? 0 : Error.c_str(); }
 
 		wl_display* (*DisplayConnect)(const char*);
 		void (*DisplayDisconnect)(wl_display*);
@@ -112,8 +113,14 @@ namespace irr
 	private:
 		bool openLibrary(void*& handle, const char* name);
 		bool loadSymbol(void* handle, void* target, const char* name);
+		void unload();
+		void* WaylandClient;
+		void* WaylandEgl;
+		void* WaylandCursor;
+		void* Xkbcommon;
+		void* Egl;
 		void* Decor;
-		const char* Error;
+		std::string Error;
 	};
 }
 

@@ -149,6 +149,7 @@ namespace video
 			std::fprintf(stderr, "Irrlicht Wayland: runtime library load failed: %s\n", Library.getError() ? Library.getError() : "unknown error");
 			return false;
 		}
+		initializeWaylandProtocolInterfaces(Library);
 		if (!Library.hasDecorationPlugin())
 		{
 			std::fprintf(stderr, "Irrlicht Wayland: no libdecor cairo/GTK decoration plugin was found\n");

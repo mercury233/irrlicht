@@ -167,7 +167,7 @@ class COpenGLCoreCacheHandler
 			{
 				if (Texture[i] == texture)
 				{
-					set(i, nullptr);
+					set(i, 0);
 				}
 			}
 		}
@@ -178,7 +178,7 @@ class COpenGLCoreCacheHandler
 			{
 				if (Texture[i])
 				{
-					set(i, nullptr);
+					set(i, 0);
 				}
 			}
 		}

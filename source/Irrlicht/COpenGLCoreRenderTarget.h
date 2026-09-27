@@ -201,7 +201,7 @@ public:
 					else if (AssignedTextures[i] != GL_NONE)
 					{
 						AssignedTextures[i] = GL_NONE;
-						Driver->irrGlFramebufferTexture2D(GL_FRAMEBUFFER, AssignedTextures[i], currentTexture->getOpenGLTextureTarget(), 0, 0);
+						Driver->irrGlFramebufferTexture2D(GL_FRAMEBUFFER, AssignedTextures[i], GL_TEXTURE_2D, 0, 0);
 
 						os::Printer::log("Error: Could not set render target.", ELL_ERROR);
 					}

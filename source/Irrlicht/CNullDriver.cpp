@@ -1624,6 +1624,19 @@ core::array<IImage*> CNullDriver::createImagesFromFile(io::IReadFile* file, E_TE
 //! Writes the provided image to disk file
 bool CNullDriver::writeImageToFile(IImage* image, const io::path& filename,u32 param)
 {
+	// Check the format before opening the file, which would truncate an existing file.
+	bool hasWriter = false;
+	for (s32 i=SurfaceWriter.size()-1; i>=0; --i)
+	{
+		if (SurfaceWriter[i]->isAWriteableFileExtension(filename))
+		{
+			hasWriter = true;
+			break;
+		}
+	}
+	if (!hasWriter)
+		return false;
+
 	io::IWriteFile* file = FileSystem->createAndWriteFile(filename);
 	if(!file)
 		return false;

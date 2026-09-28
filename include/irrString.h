@@ -771,11 +771,12 @@ public:
 
 	//! finds first occurrence of character in string
 	/** \param c: Character to search for.
+	* \param startPos: Position in string to start searching.
 	\return Position where the character has been found,
 	or -1 if not found. */
-	s32 findFirst(T c) const
+	s32 findFirst(T c, u32 startPos=0) const
 	{
-		for (u32 i=0; i<used-1; ++i)
+		for (u32 i=startPos; i<used-1; ++i)
 			if (array[i] == c)
 				return i;
 
@@ -787,14 +788,15 @@ public:
 	should find the first occurrence of 'a' or 'b', this parameter should be "ab".
 	\param count: Amount of characters in the list. Usually,
 	this should be strlen(c)
+	* \param startPos: Position in string to start searching.
 	\return Position where one of the characters has been found,
 	or -1 if not found. */
-	s32 findFirstChar(const T* const c, u32 count=1) const
+	s32 findFirstChar(const T* const c, u32 count=1, u32 startPos=0) const
 	{
 		if (!c || !count)
 			return -1;
 
-		for (u32 i=0; i<used-1; ++i)
+		for (u32 i=startPos; i<used-1; ++i)
 			for (u32 j=0; j<count; ++j)
 				if (array[i] == c[j])
 					return i;
@@ -857,6 +859,7 @@ public:
 		return -1;
 	}
 
+	//! Deprecated, can always use findFirst
 	//! finds next occurrence of character in string
 	/** \param c: Character to search for.
 	\param startPos: Position in string to start searching.
@@ -864,13 +867,8 @@ public:
 	or -1 if not found. */
 	s32 findNext(T c, u32 startPos) const
 	{
-		for (u32 i=startPos; i<used-1; ++i)
-			if (array[i] == c)
-				return i;
-
-		return -1;
+		return findFirst(c, startPos);
 	}
-
 
 	//! finds last occurrence of character in string
 	/** \param c: Character to search for.

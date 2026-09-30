@@ -653,7 +653,7 @@ public:
 
 		u32 len = 0;
 		const T* p = other;
-		while(*p && len < length)
+		while(len < length && *p)
 		{
 			++len;
 			++p;

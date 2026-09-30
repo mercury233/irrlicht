@@ -98,6 +98,8 @@ public:
 		glGenTextures(1, &TextureName);
 
 		const COpenGLCoreTexture* prevTexture = Driver->getCacheHandler()->getTextureCache().get(0);
+		if ( prevTexture )
+			prevTexture->grab();
 		Driver->getCacheHandler()->getTextureCache().set(0, this);
 
 		glTexParameteri(TextureType, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -135,6 +137,8 @@ public:
 
 
 		Driver->getCacheHandler()->getTextureCache().set(0, prevTexture);
+		if ( prevTexture )
+			prevTexture->drop();
 
 		Driver->testGLError(__LINE__);
 	}
@@ -181,6 +185,8 @@ public:
 #endif
 
 		const COpenGLCoreTexture* prevTexture = Driver->getCacheHandler()->getTextureCache().get(0);
+		if ( prevTexture )
+			prevTexture->grab(); // careful, cache tries to drop it
 		Driver->getCacheHandler()->getTextureCache().set(0, this);
 
 #ifdef GL_VERSION_3_2
@@ -229,6 +235,8 @@ public:
 		}
 
 		Driver->getCacheHandler()->getTextureCache().set(0, prevTexture);
+		if ( prevTexture )
+			prevTexture->drop();
 		Driver->testGLError(__LINE__);
 	}
 
@@ -282,6 +290,8 @@ public:
 				IImage* tmpImage = LockImage;	// not sure yet if the size required by glGetTexImage is always correct, if not we might have to allocate a different tmpImage and convert colors later on.
 
 				const COpenGLCoreTexture* prevTexture = Driver->getCacheHandler()->getTextureCache().get(0);
+				if ( prevTexture )
+					prevTexture->grab();
 				Driver->getCacheHandler()->getTextureCache().set(0, this);
 				Driver->testGLError(__LINE__);
 
@@ -311,6 +321,8 @@ public:
 				}
 
 				Driver->getCacheHandler()->getTextureCache().set(0, prevTexture);
+				if ( prevTexture )
+					prevTexture->drop();
 
 #else	// Alternative method working with copies to memory, still here for quick testing when things break, hope we can remove that before 1.9 release.
 				COpenGLCoreTexture* tmpTexture = new COpenGLCoreTexture("OGL_CORE_LOCK_TEXTURE", Size, ETT_2D, ColorFormat, Driver);
@@ -389,11 +401,15 @@ public:
 		if (!LockReadOnly)
 		{
 			const COpenGLCoreTexture* prevTexture = Driver->getCacheHandler()->getTextureCache().get(0);
+			if ( prevTexture )
+				prevTexture->grab();
 			Driver->getCacheHandler()->getTextureCache().set(0, this);
 
 			uploadTexture(false, LockLayer, MipLevelStored, getLockImageData(MipLevelStored));
 
 			Driver->getCacheHandler()->getTextureCache().set(0, prevTexture);
+			if ( prevTexture )
+				prevTexture->drop();
 		}
 
 		LockImage->drop();
@@ -409,6 +425,8 @@ public:
 			return;
 
 		const COpenGLCoreTexture* prevTexture = Driver->getCacheHandler()->getTextureCache().get(0);
+		if ( prevTexture )
+			prevTexture->grab();
 		Driver->getCacheHandler()->getTextureCache().set(0, this);
 
 		if (data)
@@ -455,6 +473,8 @@ public:
 		}
 
 		Driver->getCacheHandler()->getTextureCache().set(0, prevTexture);
+		if ( prevTexture )
+			prevTexture->drop();
 	}
 
 	virtual SExposedTextureData getExposedTextureData() const IRR_OVERRIDE

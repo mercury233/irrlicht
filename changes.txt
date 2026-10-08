@@ -10,6 +10,12 @@ Changes in ogl-es (not yet released - will be merged with trunk at some point)
 
 --------------------------
 Changes in 1.9 (not yet released)
+- MeshManipulator now sets dirty flags for meshbuffers after modifying them 
+- irr::string::findFirst and findFirstChar functions now take a startPos parameter. findNext can be fully deprecated in future.
+- Bugfix: core::string::append(const T* const other, u32 length) now ensures string stays 0-terminated
+  Also it doesn't try to find out the string length of the passed string first anymore (which may not be 0-terminated at all)
+- ISceneCollisionManager::getSceneNodeFromRayBB can now return the distance to the nearest hit
+- Several fixes & changes in CGUIStaticText::breakText(). Thanks @Mercury233 for patch (#335)
 - Add support for render target textures with mipmaps (on OpenGL and D3D9)
 - Update macOS fullscreen handling. Thanks @Mercury233 for patch (#333 - 3)
 - Implement CIrrDeviceMacOSX::maximizeWindow. Thanks @Mercury233 for patch (#333 - 2)
@@ -491,6 +497,11 @@ Changes in 1.9 (not yet released)
 
 --------------------------
 Changes in 1.8.6
+- Harden zip reader. Thanks @Lars Müller for reporting some of the problems. 
+  There are likely many more security problems in it as this wasn't written with safety in mind.
+  So only use with .zip files you trust.
+- Bugfix: core::string::append(const T* const other, u32 length) now ensures string stays 0-terminated
+  Also it doesn't try to find out the string length of the passed string first anymore (which may not be 0-terminated at all)
 - Bugfix: CGUITabControl can hide control buttons again when resizing element while it was scrolled already
   Thanks @Mercury233 for the patch (#332 - 6)
 - Bugfix: IrrlichtDevice::isWindowMinimized no longer returns true when it's maximized on Windows.

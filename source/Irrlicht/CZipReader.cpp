@@ -204,7 +204,7 @@ bool CZipReader::scanGZipHeader()
 		if (header.flags & EGZF_EXTRA_FIELDS)
 		{
 			// read length of extra data
-			u16 dataLen;
+			u16 dataLen=0;
 
 			File->read(&dataLen, 2);
 
@@ -220,11 +220,12 @@ bool CZipReader::scanGZipHeader()
 
 		if (header.flags & EGZF_FILE_NAME)
 		{
-			c8 c;
+			c8 c=0;
 			File->read(&c, 1);
 			while (c)
 			{
 				ZipFileName.append(c);
+				c = 0;
 				File->read(&c, 1);
 			}
 		}
@@ -250,15 +251,20 @@ bool CZipReader::scanGZipHeader()
 		if (header.flags & EGZF_COMMENT)
 		{
 			c8 c='a';
-			while (c)
-				File->read(&c, 1);
+			while (c && File->read(&c, 1)) 
+			{}
 		}
 
 		if (header.flags & EGZF_CRC16)
 			File->seek(2, true);
 
 		// we are now at the start of the data blocks
-		entry.Offset = File->getPos();
+		const long startDataPos = File->getPos();
+		if ( startDataPos < 0 )
+			return false;
+		entry.Offset = (u32)startDataPos;
+		if ( (long)entry.Offset != startDataPos )
+			return false;
 
 		entry.header.FilenameLength = ZipFileName.size();
 
@@ -266,12 +272,18 @@ bool CZipReader::scanGZipHeader()
 		entry.header.DataDescriptor.CompressedSize = (File->getSize() - 8) - File->getPos();
 
 		// seek to file end
+		const long compressedSize = (long)entry.header.DataDescriptor.CompressedSize;
+		if ( compressedSize < 0 )
+			return false;
 		File->seek(entry.header.DataDescriptor.CompressedSize, true);
 
 		// read CRC
-		File->read(&entry.header.DataDescriptor.CRC32, 4);
+		if ( File->read(&entry.header.DataDescriptor.CRC32, 4) < 4 )
+			return false;
+
 		// read uncompressed size
-		File->read(&entry.header.DataDescriptor.UncompressedSize, 4);
+		if ( File->read(&entry.header.DataDescriptor.UncompressedSize, 4) < 4 )
+			return false;
 
 #ifdef __BIG_ENDIAN__
 		entry.header.DataDescriptor.CRC32 = os::Byteswap::byteswap(entry.header.DataDescriptor.CRC32);
@@ -295,7 +307,8 @@ bool CZipReader::scanZipHeader(bool ignoreGPBits)
 	entry.Offset = 0;
 	memset(&entry.header, 0, sizeof(SZIPFileHeader));
 
-	File->read(&entry.header, sizeof(SZIPFileHeader));
+	if ( File->read(&entry.header, sizeof(SZIPFileHeader)) != sizeof(SZIPFileHeader) )
+		return false;
 
 #ifdef __BIG_ENDIAN__
 		entry.header.Sig = os::Byteswap::byteswap(entry.header.Sig);
@@ -327,24 +340,30 @@ bool CZipReader::scanZipHeader(bool ignoreGPBits)
 	// AES encryption
 	if ((entry.header.GeneralBitFlag & ZIP_FILE_ENCRYPTED) && (entry.header.CompressionMethod == 99))
 	{
-		s16 restSize = entry.header.ExtraFieldLength;
+		u16 restSize = entry.header.ExtraFieldLength;
 		SZipFileExtraHeader extraHeader;
 		while (restSize)
 		{
-			File->read(&extraHeader, sizeof(extraHeader));
+			if ( File->read(&extraHeader, sizeof(extraHeader)) != sizeof(extraHeader) )
+				return false;
 #ifdef __BIG_ENDIAN__
 			extraHeader.ID = os::Byteswap::byteswap(extraHeader.ID);
 			extraHeader.Size = os::Byteswap::byteswap(extraHeader.Size);
 #endif
+			if ( sizeof(extraHeader) > restSize )
+				return false;
 			restSize -= sizeof(extraHeader);
 			if (extraHeader.ID==(s16)0x9901)
 			{
 				SZipFileAESExtraData data;
-				File->read(&data, sizeof(data));
+				if ( File->read(&data, sizeof(data)) != sizeof(data) )
+					return false;
 #ifdef __BIG_ENDIAN__
 				data.Version = os::Byteswap::byteswap(data.Version);
 				data.CompressionMode = os::Byteswap::byteswap(data.CompressionMode);
 #endif
+				if ( sizeof(data) > restSize )
+					return false;
 				restSize -= sizeof(data);
 				if (data.Vendor[0]=='A' && data.Vendor[1]=='E')
 				{
@@ -403,7 +422,8 @@ bool CZipReader::scanZipHeader(bool ignoreGPBits)
 			}
 			File->seek(-seek, true);
 		}
-		File->read(&dirEnd, sizeof(dirEnd));
+		if ( File->read(&dirEnd, sizeof(dirEnd)) != sizeof(dirEnd) )
+			return false;
 #ifdef __BIG_ENDIAN__
 		dirEnd.NumberDisk = os::Byteswap::byteswap(dirEnd.NumberDisk);
 		dirEnd.NumberStart = os::Byteswap::byteswap(dirEnd.NumberStart);
@@ -416,7 +436,7 @@ bool CZipReader::scanZipHeader(bool ignoreGPBits)
 		FileInfo.reallocate(dirEnd.TotalEntries);
 		File->seek(dirEnd.Offset);
 		while (scanCentralDirectoryHeader()) { }
-		return false;
+		return false;	// TODO: why always false? Is this not supported yet?
 	}
 
 	// store position in file
@@ -440,7 +460,8 @@ bool CZipReader::scanCentralDirectoryHeader()
 {
 	io::path ZipFileName = "";
 	SZIPFileCentralDirFileHeader entry;
-	File->read(&entry, sizeof(SZIPFileCentralDirFileHeader));
+	if ( File->read(&entry, sizeof(SZIPFileCentralDirFileHeader)) != sizeof(SZIPFileCentralDirFileHeader) )
+		return false;
 
 #ifdef __BIG_ENDIAN__
 	entry.Sig = os::Byteswap::byteswap(entry.Sig);
@@ -466,8 +487,10 @@ bool CZipReader::scanCentralDirectoryHeader()
 		return false; // central dir headers end here.
 
 	const long pos = File->getPos();
-	File->seek(entry.RelativeOffsetOfLocalHeader);
-	scanZipHeader(true);
+	if ( !File->seek(entry.RelativeOffsetOfLocalHeader) )
+		return false;
+	if ( !scanZipHeader(true) )
+		return false;
 	File->seek(pos+entry.FilenameLength+entry.ExtraFieldLength+entry.FileCommentLength);
 	FileInfo.getLast().header.DataDescriptor.CompressedSize=entry.CompressedSize;
 	FileInfo.getLast().header.DataDescriptor.UncompressedSize=entry.UncompressedSize;
@@ -555,6 +578,11 @@ IReadFile* CZipReader::createAndOpenFile(u32 index)
 		if (strncmp(pwVerificationFile, pwVerification, 2))
 		{
 			os::Printer::log("Wrong password");
+			return 0;
+		}
+		if ( saltSize+12u > e.header.DataDescriptor.CompressedSize )
+		{
+			os::Printer::log("Suspicous header");
 			return 0;
 		}
 		decryptedSize= e.header.DataDescriptor.CompressedSize-saltSize-12;

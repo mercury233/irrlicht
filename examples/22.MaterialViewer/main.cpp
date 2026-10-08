@@ -1082,13 +1082,13 @@ void CApp::setActiveMeshNodeType(ENodeType nodeType)
 
 	if ( SceneNode )
 		smgr->addToDeletionQueue(SceneNode);
-	SceneNode = nullptr;
+	SceneNode = 0;
 	if ( SceneNode2T )
 		smgr->addToDeletionQueue(SceneNode2T);
-	SceneNode2T = nullptr;
+	SceneNode2T = 0;
 	if ( SceneNodeTangents )
 		smgr->addToDeletionQueue(SceneNodeTangents);
-	SceneNodeTangents = nullptr;
+	SceneNodeTangents = 0;
 
 	// default material
 	video::SMaterial defaultMaterial;
@@ -1142,7 +1142,7 @@ irr::scene::IMeshSceneNode* CApp::getVisibleMeshNode() const
 		return SceneNode2T;
 	if ( SceneNodeTangents && SceneNodeTangents->isVisible() )
 		return SceneNodeTangents;
-	return nullptr;
+	return 0;
 }
 
 /*

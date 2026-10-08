@@ -487,6 +487,9 @@ Changes in 1.9 (not yet released)
 
 --------------------------
 Changes in 1.8.6
+- Harden zip reader. Thanks @Lars Müller for reporting some of the problems. 
+  There are likely many more security problems in it as this wasn't written with safety in mind.
+  So only use with .zip files you trust.
 - Bugfix: core::string::append(const T* const other, u32 length) now ensures string stays 0-terminated
   Also it doesn't try to find out the string length of the passed string first anymore (which may not be 0-terminated at all)
 - Bugfix: CGUITabControl can hide control buttons again when resizing element while it was scrolled already

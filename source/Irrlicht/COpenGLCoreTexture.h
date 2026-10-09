@@ -57,6 +57,8 @@ public:
 		IRR_DEBUG_BREAK_IF(images.size() == 0)
 
 		DriverType = Driver->getDriverType();
+		if ( MultiSamples > GL_MAX_SAMPLES )
+
 		TextureType = TextureTypeIrrToGL(Type, MultiSamples); // MultiSamples currently always 0 here, if it's ever needed we can pass it also to constructor
 		HasMipMaps = Driver->getTextureCreationFlag(ETCF_CREATE_MIP_MAPS);
 		KeepImage = Driver->getTextureCreationFlag(ETCF_ALLOW_MEMORY_COPY);
@@ -151,7 +153,13 @@ public:
 		MipLevelStored(0), LegacyAutoGenerateMipMaps(false)
 	{
 		DriverType = Driver->getDriverType();
+#ifdef GL_VERSION_3_2
 		MultiSamples = multiSamples;
+#else
+		MultiSamples = 0;
+		if ( multiSamples > 0 )
+			os::Printer::log("COpenGLCoreTexture: No Multisample texture support before GL 3.2", ELL_WARNING);
+#endif
 		TextureType = TextureTypeIrrToGL(Type, MultiSamples);
 		HasMipMaps = Driver->getTextureCreationFlag(ETCF_CREATE_MIP_MAPS);
 		IsRenderTarget = true;

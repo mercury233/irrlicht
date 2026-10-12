@@ -128,7 +128,7 @@ s32 CGUIListBox::getItemAt(s32 xpos, s32 ypos) const
 	if ( ItemHeight == 0 )
 		return -1;
 
-	s32 item = ((ypos - AbsoluteRect.UpperLeftCorner.Y - 1) + ScrollBar->getPos()) / ItemHeight;
+	s32 item = ((ypos - AbsoluteRect.UpperLeftCorner.Y) + ScrollBar->getPos()) / ItemHeight;
 	if ( item < 0 || item >= (s32)Items.size())
 		return -1;
 

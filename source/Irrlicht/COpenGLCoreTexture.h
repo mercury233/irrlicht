@@ -57,8 +57,6 @@ public:
 		IRR_DEBUG_BREAK_IF(images.size() == 0)
 
 		DriverType = Driver->getDriverType();
-		if ( MultiSamples > GL_MAX_SAMPLES )
-
 		TextureType = TextureTypeIrrToGL(Type, MultiSamples); // MultiSamples currently always 0 here, if it's ever needed we can pass it also to constructor
 		HasMipMaps = Driver->getTextureCreationFlag(ETCF_CREATE_MIP_MAPS);
 		KeepImage = Driver->getTextureCreationFlag(ETCF_ALLOW_MEMORY_COPY);

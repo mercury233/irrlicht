@@ -1,5 +1,9 @@
 --------------------------
 Changes in 1.9 (not yet released)
+- Listbox now ensures HoverSelected is applied on lmouse-up on when losing focus. 
+  Previously it could show a changed selection which was never applied (so getSelected() returned old values).
+  Thanks @Mercury233 for reporting that problem in patch (#335) discussion.
+- Listbox now updates HoverSelection on lmouse-down (only did on first mouse-move previously)
 - MeshManipulator now sets dirty flags for meshbuffers after modifying them 
 - irr::string::findFirst and findFirstChar functions now take a startPos parameter. findNext can be fully deprecated in future.
 - Bugfix: core::string::append(const T* const other, u32 length) now ensures string stays 0-terminated

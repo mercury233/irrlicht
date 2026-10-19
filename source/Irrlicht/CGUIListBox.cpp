@@ -416,6 +416,8 @@ bool CGUIListBox::OnEvent(const SEvent& event)
 				{
 					if (event.GUIEvent.Caller == this)
 						Selecting = false;
+					if ( HoverSelected >= 0 )
+						selectNew(HoverSelected);
 				}
 			default:
 			break;
@@ -435,6 +437,8 @@ bool CGUIListBox::OnEvent(const SEvent& event)
 				case EMIE_LMOUSE_PRESSED_DOWN:
 				{
 					Selecting = true;
+					if (isPointInside(p))
+						selectNew(getItemAt(AbsoluteRect.UpperLeftCorner.X, event.MouseInput.Y), true);
 					return true;
 				}
 
@@ -443,7 +447,9 @@ bool CGUIListBox::OnEvent(const SEvent& event)
 					Selecting = false;
 
 					if (isPointInside(p))
-						selectNew(event.MouseInput.Y);
+						selectNew(getItemAt(AbsoluteRect.UpperLeftCorner.X, event.MouseInput.Y));
+					else if ( HoverSelected >= 0 )
+						selectNew(HoverSelected);
 
 					return true;
 				}
@@ -453,7 +459,7 @@ bool CGUIListBox::OnEvent(const SEvent& event)
 					{
 						if (isPointInside(p))
 						{
-							selectNew(event.MouseInput.Y, true);
+							selectNew(getItemAt(AbsoluteRect.UpperLeftCorner.X, event.MouseInput.Y), true);
 							return true;
 						}
 					}
@@ -471,12 +477,12 @@ bool CGUIListBox::OnEvent(const SEvent& event)
 }
 
 
-void CGUIListBox::selectNew(s32 ypos, bool onlyHover)
+void CGUIListBox::selectNew(s32 itemIndex, bool onlyHover)
 {
 	u32 now = os::Timer::getTime();
 	s32 oldSelected = Selected;
 
-	HoverSelected = getItemAt(AbsoluteRect.UpperLeftCorner.X, ypos);
+	HoverSelected = itemIndex;
 	if (HoverSelected<0 && !Items.empty())
 		HoverSelected = 0;
 	if  (!onlyHover)

@@ -1,7 +1,8 @@
 --------------------------
 Changes in 1.9 (not yet released)
+- Escape key in ComboBox now working (not sure since when it was broken... 1.8 already didn't, but probably some earlier version was OK)
 - Fix: CMeshManipulator::getPolyCount no longer assumes every mesh is made of triangles
-- Listbox now ensures HoverSelected is applied on lmouse-up or when losing focus. 
+- Listbox now ensures HoverSelected is applied on lmouse-up and reset when losing focus.
   Previously it could show a changed selection which was never applied, so getSelected() returned old values.
   Thanks @Mercury233 for reporting that problem in patch (#335) discussion.
 - Listbox now updates HoverSelection on lmouse-down (only did on first mouse-move previously)

@@ -324,12 +324,11 @@ bool CGUIListBox::OnEvent(const SEvent& event)
 				}
 				return true;
 			}
-			else if (event.KeyInput.Key == KEY_TAB )
-			{
-				return false;
-			}
 			else if (event.KeyInput.PressedDown && event.KeyInput.Char)
 			{
+				if ( event.KeyInput.Char < 32 )	// ignore control characters
+					break;
+
 				// change selection based on text as it is typed.
 				u32 now = os::Timer::getTime();
 

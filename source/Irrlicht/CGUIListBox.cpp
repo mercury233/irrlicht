@@ -416,7 +416,7 @@ bool CGUIListBox::OnEvent(const SEvent& event)
 				{
 					if (event.GUIEvent.Caller == this)
 						Selecting = false;
-					if ( HoverSelected >= 0 )
+					if ( HoverSelected >= 0 && event.GUIEvent.Element != this && !isMyChild(event.GUIEvent.Element) )
 						selectNew(HoverSelected);
 				}
 			default:
@@ -494,7 +494,8 @@ void CGUIListBox::selectNew(s32 itemIndex, bool onlyHover)
 	recalculateScrollPos();
 
 	gui::EGUI_EVENT_TYPE eventType = (Selected == oldSelected && now < SelectTime + 500) ? EGET_LISTBOX_SELECTED_AGAIN : EGET_LISTBOX_CHANGED;
-	SelectTime = now;
+	if (!onlyHover)
+		SelectTime = now;
 	// post the news
 	if (Parent && !onlyHover)
 	{

@@ -440,7 +440,9 @@ void CGUIComboBox::openCloseMenu()
 	{
 		// close list box
 		Environment->setFocus(this);
-		ListBox->remove();
+		// Focus loss can close the list box through a selection event.
+		if (ListBox)
+			ListBox->remove();
 		ListBox = 0;
 	}
 	else

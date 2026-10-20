@@ -494,7 +494,10 @@ void CGUIListBox::selectNew(s32 itemIndex, bool onlyHover)
 	recalculateScrollPos();
 
 	gui::EGUI_EVENT_TYPE eventType = (Selected == oldSelected && now < SelectTime + 500) ? EGET_LISTBOX_SELECTED_AGAIN : EGET_LISTBOX_CHANGED;
-	SelectTime = now;
+
+	if (!onlyHover)
+		SelectTime = now;
+
 	// post the news
 	if (Parent && !onlyHover)
 	{

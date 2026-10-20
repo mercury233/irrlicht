@@ -416,7 +416,7 @@ bool CGUIListBox::OnEvent(const SEvent& event)
 				{
 					if (event.GUIEvent.Caller == this)
 						Selecting = false;
-					if ( HoverSelected >= 0 )
+					if ( HoverSelected >= 0 && event.GUIEvent.Element != this && !isMyChild(event.GUIEvent.Element) )
 						selectNew(HoverSelected);
 				}
 			default:

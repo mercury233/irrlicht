@@ -51,7 +51,11 @@ namespace irr
 		to your operating system. If this is unavailable then the X11, SDL and then console device
 		will be tried. This ensures that Irrlicht will run even if your platform is unsupported,
 		although it may not be able to render anything. */
-		EIDT_BEST
+		EIDT_BEST,
+
+		//! A device native to Wayland compositors.
+		/** This value is appended to preserve the numeric values of all existing device types. */
+		EIDT_WAYLAND
 	};
 
 } // end namespace irr

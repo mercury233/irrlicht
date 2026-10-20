@@ -40,6 +40,7 @@
 
 namespace irr
 {
+	f32 getX11WindowScaleFactor();
 
 	class CIrrDeviceLinux : public CIrrDeviceStub, public video::IImagePresenter
 	{
@@ -162,6 +163,26 @@ namespace irr
 
 		bool switchToFullscreen(bool reset=false);
 
+		u32 scaleToPhysicalSize(u32 value) const
+		{
+			return static_cast<u32>(value * WindowScaleFactor + 0.5f);
+		}
+
+		s32 scaleToPhysicalPosition(s32 value) const
+		{
+			return static_cast<s32>(value * WindowScaleFactor + (value >= 0 ? 0.5f : -0.5f));
+		}
+
+		u32 scaleToLogicalSize(u32 value) const
+		{
+			return static_cast<u32>(value / WindowScaleFactor + 0.5f);
+		}
+
+		s32 scaleToLogicalPosition(s32 value) const
+		{
+			return static_cast<s32>(value / WindowScaleFactor);
+		}
+
 #ifdef _IRR_COMPILE_WITH_X11_
 		bool createInputContext();
 		void destroyInputContext();
@@ -209,7 +230,8 @@ namespace irr
 			//! Sets the new position of the cursor.
 			virtual void setPosition(f32 x, f32 y) IRR_OVERRIDE
 			{
-				setPosition((s32)(x*Device->Width), (s32)(y*Device->Height));
+				setPosition((s32)(x*Device->scaleToLogicalSize(Device->Width)),
+						(s32)(y*Device->scaleToLogicalSize(Device->Height)));
 			}
 
 			//! Sets the new position of the cursor.
@@ -222,6 +244,8 @@ namespace irr
 			virtual void setPosition(s32 x, s32 y) IRR_OVERRIDE
 			{
 #ifdef _IRR_COMPILE_WITH_X11_
+				const s32 physicalX = Device->scaleToPhysicalPosition(x);
+				const s32 physicalY = Device->scaleToPhysicalPosition(y);
 
 				if (!Null)
 				{
@@ -239,8 +263,8 @@ namespace irr
 								Device->XWindow, 0, 0,
 								Device->Width,
 								Device->Height,
-								ReferenceRect.UpperLeftCorner.X + x,
-								ReferenceRect.UpperLeftCorner.Y + y);
+								Device->scaleToPhysicalPosition(ReferenceRect.UpperLeftCorner.X + x),
+								Device->scaleToPhysicalPosition(ReferenceRect.UpperLeftCorner.Y + y));
 						}
 						else
 #endif
@@ -250,8 +274,8 @@ namespace irr
 								Device->XWindow, 0, 0,
 								Device->Width,
 								Device->Height,
-								ReferenceRect.UpperLeftCorner.X + x,
-								ReferenceRect.UpperLeftCorner.Y + y);
+								Device->scaleToPhysicalPosition(ReferenceRect.UpperLeftCorner.X + x),
+								Device->scaleToPhysicalPosition(ReferenceRect.UpperLeftCorner.Y + y));
 						}
 					}
 					else
@@ -264,7 +288,7 @@ namespace irr
 								None,
 								Device->XWindow, 0, 0,
 								Device->Width,
-								Device->Height, x, y);
+								Device->Height, physicalX, physicalY);
 						}
 						else
 #endif
@@ -273,7 +297,7 @@ namespace irr
 								None,
 								Device->XWindow, 0, 0,
 								Device->Width,
-								Device->Height, x, y);
+								Device->Height, physicalX, physicalY);
 						}
 					}
 					XFlush(Device->XDisplay);
@@ -299,8 +323,8 @@ namespace irr
 
 				if (!UseReferenceRect)
 				{
-					return core::position2d<f32>(CursorPos.X / (f32)Device->Width,
-						CursorPos.Y / (f32)Device->Height);
+					return core::position2d<f32>(CursorPos.X / (f32)Device->scaleToLogicalSize(Device->Width),
+						CursorPos.Y / (f32)Device->scaleToLogicalSize(Device->Height));
 				}
 
 				return core::position2d<f32>(CursorPos.X / (f32)ReferenceRect.getWidth(),
@@ -335,8 +359,8 @@ namespace irr
 				else
 				{
 					rect.UpperLeftCorner = core::vector2di(0,0);
-					rect.LowerRightCorner.X = (irr::s32)Device->Width;
-					rect.LowerRightCorner.Y = (irr::s32)Device->Height;
+					rect.LowerRightCorner.X = (irr::s32)Device->scaleToLogicalSize(Device->Width);
+					rect.LowerRightCorner.Y = (irr::s32)Device->scaleToLogicalSize(Device->Height);
 				}
 				return UseReferenceRect;
 			}
@@ -388,10 +412,13 @@ namespace irr
 				Window tmp;
 				int itmp1, itmp2;
 				unsigned  int maskreturn;
+				int physicalX, physicalY;
 				XQueryPointer(Device->XDisplay, Device->XWindow,
 					&tmp, &tmp,
 					&itmp1, &itmp2,
-					&CursorPos.X, &CursorPos.Y, &maskreturn);
+					&physicalX, &physicalY, &maskreturn);
+				CursorPos.X = Device->scaleToLogicalPosition(physicalX);
+				CursorPos.Y = Device->scaleToLogicalPosition(physicalY);
 #endif
 			}
 
@@ -466,6 +493,7 @@ namespace irr
 		GLXContext Context;
 		#endif
 #endif
+		f32 WindowScaleFactor;
 		u32 Width, Height;
 		bool WindowHasFocus;
 		bool WindowMinimized;

@@ -98,7 +98,9 @@
 #define _IRR_LINUX_PLATFORM_
 #endif
 #define _IRR_POSIX_API_
+#if !defined(NO_IRR_COMPILE_WITH_X11_DEVICE_) && !defined(_IRR_COMPILE_WITH_X11_DEVICE_)
 #define _IRR_COMPILE_WITH_X11_DEVICE_
+#endif
 #endif
 
 
@@ -181,6 +183,8 @@ define out. */
 	#elif defined(_IRR_COMPILE_WITH_X11_DEVICE_)
 		#define _IRR_OPENGL_USE_EXTPOINTER_
 		#define _IRR_COMPILE_WITH_GLX_MANAGER_
+	#elif defined(_IRR_COMPILE_WITH_WAYLAND_DEVICE_)
+		#define _IRR_OPENGL_USE_EXTPOINTER_
 	#elif defined(_IRR_COMPILE_WITH_OSX_DEVICE_)
 		#define _IRR_COMPILE_WITH_NSOGL_MANAGER_
 	#elif defined(_IRR_SOLARIS_PLATFORM_)

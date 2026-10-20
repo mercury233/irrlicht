@@ -20,6 +20,9 @@
 #if defined(_IRR_COMPILE_WITH_X11_DEVICE_)
 #include "CIrrDeviceLinux.h"
 #endif
+#if defined(_IRR_COMPILE_WITH_WAYLAND_DEVICE_)
+#include "CIrrDeviceLinuxWayland.h"
+#endif
 #if defined(_IRR_COMPILE_WITH_OSX_DEVICE_)
 #import <Cocoa/Cocoa.h>
 #endif
@@ -33,12 +36,32 @@ namespace irr
 // constructor  linux
 	COSOperator::COSOperator(const core::stringc& osVersion, CIrrDeviceLinux* device)
 : OperatingSystem(osVersion), IrrDeviceLinux(device)
+#if defined(_IRR_COMPILE_WITH_WAYLAND_DEVICE_)
+, IrrDeviceWayland(0)
+#endif
+{
+}
+#endif
+
+#if defined(_IRR_COMPILE_WITH_WAYLAND_DEVICE_)
+	COSOperator::COSOperator(const core::stringc& osVersion, CIrrDeviceLinuxWayland* device)
+: OperatingSystem(osVersion)
+#if defined(_IRR_COMPILE_WITH_X11_DEVICE_)
+, IrrDeviceLinux(0)
+#endif
+, IrrDeviceWayland(device)
 {
 }
 #endif
 
 // constructor
 COSOperator::COSOperator(const core::stringc& osVersion) : OperatingSystem(osVersion)
+#if defined(_IRR_COMPILE_WITH_X11_DEVICE_)
+, IrrDeviceLinux(0)
+#endif
+#if defined(_IRR_COMPILE_WITH_WAYLAND_DEVICE_)
+, IrrDeviceWayland(0)
+#endif
 {
 	#ifdef _DEBUG
 	setDebugName("COSOperator");
@@ -113,9 +136,15 @@ void COSOperator::copyToClipboard(const c8* text) const
         }
     }
 
-#elif defined(_IRR_COMPILE_WITH_X11_DEVICE_)
+#elif defined(_IRR_COMPILE_WITH_X11_DEVICE_) || defined(_IRR_COMPILE_WITH_WAYLAND_DEVICE_)
+#if defined(_IRR_COMPILE_WITH_WAYLAND_DEVICE_)
+    if ( IrrDeviceWayland )
+        IrrDeviceWayland->copyToClipboard(text);
+#endif
+#if defined(_IRR_COMPILE_WITH_X11_DEVICE_)
     if ( IrrDeviceLinux )
         IrrDeviceLinux->copyToClipboard(text);
+#endif
 #else
 
 #endif
@@ -163,8 +192,15 @@ const c8* COSOperator::getTextFromClipboard() const
     ClipboardBuffer = result ? result : "";
     return ClipboardBuffer.c_str();
 
-#elif defined(_IRR_COMPILE_WITH_X11_DEVICE_)
-    ClipboardBuffer = IrrDeviceLinux ? IrrDeviceLinux->getTextFromClipboard() : "";
+#elif defined(_IRR_COMPILE_WITH_X11_DEVICE_) || defined(_IRR_COMPILE_WITH_WAYLAND_DEVICE_)
+#if defined(_IRR_COMPILE_WITH_WAYLAND_DEVICE_)
+    if ( IrrDeviceWayland )
+        ClipboardBuffer = IrrDeviceWayland->getTextFromClipboard();
+#endif
+#if defined(_IRR_COMPILE_WITH_X11_DEVICE_)
+    if ( IrrDeviceLinux )
+        ClipboardBuffer = IrrDeviceLinux->getTextFromClipboard();
+#endif
     return ClipboardBuffer.c_str();
 
 #else

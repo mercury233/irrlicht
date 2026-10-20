@@ -958,25 +958,17 @@ bool CD3D9Driver::updateVertexHardwareBuffer(SHWBufferLink_d3d9 *hwBuffer)
 		if (FAILED(pID3DDevice->CreateVertexBuffer(bufSize, flags, FVF, D3DPOOL_DEFAULT, &hwBuffer->vertexBuffer, NULL)))
 			return false;
 		hwBuffer->vertexBufferSize = bufSize;
-
-		flags = 0; // SIO2: Reset flags before Lock
-		if (hwBuffer->Mapped_Vertex != scene::EHM_STATIC)
-			flags = D3DLOCK_DISCARD;
-
-		void* lockedBuffer = 0;
-		hwBuffer->vertexBuffer->Lock(0, bufSize, (void**)&lockedBuffer, flags);
-		memcpy(lockedBuffer, vertices, bufSize);
-		hwBuffer->vertexBuffer->Unlock();
-	}
-	else
-	{
-		void* lockedBuffer = 0;
-		hwBuffer->vertexBuffer->Lock(0, bufSize, (void**)&lockedBuffer, D3DLOCK_DISCARD);
-		memcpy(lockedBuffer, vertices, bufSize);
-		hwBuffer->vertexBuffer->Unlock();
 	}
 
-	return true;
+	DWORD flags = 0;
+	if (hwBuffer->Mapped_Vertex != scene::EHM_STATIC)
+		flags = D3DLOCK_DISCARD;
+
+	void* lockedBuffer = 0;
+	if (FAILED(hwBuffer->vertexBuffer->Lock(0, bufSize, &lockedBuffer, flags)))
+		return false;
+	memcpy(lockedBuffer, vertices, bufSize);
+	return SUCCEEDED(hwBuffer->vertexBuffer->Unlock());
 }
 
 
@@ -1021,31 +1013,18 @@ bool CD3D9Driver::updateIndexHardwareBuffer(SHWBufferLink_d3d9 *hwBuffer)
 
 		if (FAILED(pID3DDevice->CreateIndexBuffer(bufSize, flags, indexType, D3DPOOL_DEFAULT, &hwBuffer->indexBuffer, NULL)))
 			return false;
-
-		flags = 0; // SIO2: Reset flags before Lock
-		if (hwBuffer->Mapped_Index != scene::EHM_STATIC)
-			flags = D3DLOCK_DISCARD;
-
-		void* lockedBuffer = 0;
-		if (FAILED(hwBuffer->indexBuffer->Lock( 0, 0, (void**)&lockedBuffer, flags)))
-			return false;
-
-		memcpy(lockedBuffer, indices, bufSize);
-		hwBuffer->indexBuffer->Unlock();
-
 		hwBuffer->indexBufferSize = bufSize;
 	}
-	else
-	{
-		void* lockedBuffer = 0;
-		if( SUCCEEDED(hwBuffer->indexBuffer->Lock( 0, 0, (void**)&lockedBuffer, D3DLOCK_DISCARD)))
-		{
-			memcpy(lockedBuffer, indices, bufSize);
-			hwBuffer->indexBuffer->Unlock();
-		}
-	}
 
-	return true;
+	DWORD flags = 0;
+	if (hwBuffer->Mapped_Index != scene::EHM_STATIC)
+		flags = D3DLOCK_DISCARD;
+
+	void* lockedBuffer = 0;
+	if (FAILED(hwBuffer->indexBuffer->Lock(0, bufSize, &lockedBuffer, flags)))
+		return false;
+	memcpy(lockedBuffer, indices, bufSize);
+	return SUCCEEDED(hwBuffer->indexBuffer->Unlock());
 }
 
 
@@ -1060,10 +1039,9 @@ bool CD3D9Driver::updateHardwareBuffer(SHWBufferLink *hwBuffer)
 		if (hwBuffer->ChangedID_Vertex != hwBuffer->MeshBuffer->getChangedID_Vertex()
 			|| !((SHWBufferLink_d3d9*)hwBuffer)->vertexBuffer)
 		{
-			hwBuffer->ChangedID_Vertex = hwBuffer->MeshBuffer->getChangedID_Vertex();
-
 			if (!updateVertexHardwareBuffer((SHWBufferLink_d3d9*)hwBuffer))
 				return false;
+			hwBuffer->ChangedID_Vertex = hwBuffer->MeshBuffer->getChangedID_Vertex();
 		}
 	}
 
@@ -1072,10 +1050,9 @@ bool CD3D9Driver::updateHardwareBuffer(SHWBufferLink *hwBuffer)
 		if (hwBuffer->ChangedID_Index != hwBuffer->MeshBuffer->getChangedID_Index()
 			|| !((SHWBufferLink_d3d9*)hwBuffer)->indexBuffer)
 		{
-			hwBuffer->ChangedID_Index = hwBuffer->MeshBuffer->getChangedID_Index();
-
 			if (!updateIndexHardwareBuffer((SHWBufferLink_d3d9*)hwBuffer))
 				return false;
+			hwBuffer->ChangedID_Index = hwBuffer->MeshBuffer->getChangedID_Index();
 		}
 	}
 
@@ -1146,7 +1123,8 @@ void CD3D9Driver::drawHardwareBuffer(SHWBufferLink *_HWBuffer)
 
 	SHWBufferLink_d3d9 *HWBuffer=(SHWBufferLink_d3d9*)_HWBuffer;
 
-	updateHardwareBuffer(HWBuffer); //check if update is needed
+	if (!updateHardwareBuffer(HWBuffer))
+		return;
 
 	HWBuffer->LastUsed=0;//reset count
 
@@ -2907,6 +2885,16 @@ bool CD3D9Driver::retrieveDevice(int numTries, int msSleepBetweenTries)
 bool CD3D9Driver::reset()
 {
 	os::Printer::log("Resetting D3D9 device.", ELL_INFORMATION);
+
+	// SetTexture holds COM references, including references to default-pool RTTs
+	// which must all be gone before Reset.
+	for (u32 i = 0; i < MaxTextureUnits; ++i)
+	{
+		pID3DDevice->SetTexture(i, 0);
+		CurrentTexture[i] = 0;
+	}
+	for (u32 i = 0; i < 4; ++i)
+		pID3DDevice->SetTexture(D3DVERTEXTEXTURESAMPLER0 + i, 0);
 
 	for (u32 i = 0; i<RenderTargets.size(); ++i)
 	{

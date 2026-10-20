@@ -415,9 +415,10 @@ bool CGUIListBox::OnEvent(const SEvent& event)
 			case gui::EGET_ELEMENT_FOCUS_LOST:
 				{
 					if (event.GUIEvent.Caller == this)
+					{
 						Selecting = false;
-					if ( HoverSelected >= 0 )
-						selectNew(HoverSelected);
+						HoverSelected = -1;
+					}
 				}
 			default:
 			break;
@@ -457,7 +458,7 @@ bool CGUIListBox::OnEvent(const SEvent& event)
 				case EMIE_MOUSE_MOVED:
 					if (Selecting || MoveOverSelect)
 					{
-						if (isPointInside(p))
+						if (isPointInside(p) && !ScrollBar->isPointInside(p))
 						{
 							selectNew(getItemAt(AbsoluteRect.UpperLeftCorner.X, event.MouseInput.Y), true);
 							return true;

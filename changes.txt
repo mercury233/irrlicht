@@ -1,5 +1,6 @@
 --------------------------
 Changes in 1.9 (not yet released)
+- Fix: CMeshManipulator::getPolyCount no longer assumes every mesh is made of triangles
 - Listbox now ensures HoverSelected is applied on lmouse-up or when losing focus. 
   Previously it could show a changed selection which was never applied, so getSelected() returned old values.
   Thanks @Mercury233 for reporting that problem in patch (#335) discussion.

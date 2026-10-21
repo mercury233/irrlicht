@@ -324,12 +324,11 @@ bool CGUIListBox::OnEvent(const SEvent& event)
 				}
 				return true;
 			}
-			else if (event.KeyInput.Key == KEY_TAB )
-			{
-				return false;
-			}
 			else if (event.KeyInput.PressedDown && event.KeyInput.Char)
 			{
+				if ( event.KeyInput.Char < 32 )	// ignore control characters
+					break;
+
 				// change selection based on text as it is typed.
 				u32 now = os::Timer::getTime();
 
@@ -415,14 +414,9 @@ bool CGUIListBox::OnEvent(const SEvent& event)
 			case gui::EGET_ELEMENT_FOCUS_LOST:
 				{
 					if (event.GUIEvent.Caller == this)
-						Selecting = false;
-					if ( HoverSelected >= 0 && event.GUIEvent.Element != this && !isMyChild(event.GUIEvent.Element) )
 					{
-						// Hover selection is only a preview until explicitly confirmed.
-						if (MoveOverSelect)
-							HoverSelected = -1;
-						else
-							selectNew(HoverSelected);
+						Selecting = false;
+						HoverSelected = -1;
 					}
 				}
 			default:
@@ -463,7 +457,7 @@ bool CGUIListBox::OnEvent(const SEvent& event)
 				case EMIE_MOUSE_MOVED:
 					if (Selecting || MoveOverSelect)
 					{
-						if (isPointInside(p))
+						if (isPointInside(p) && !ScrollBar->isPointInside(p))
 						{
 							selectNew(getItemAt(AbsoluteRect.UpperLeftCorner.X, event.MouseInput.Y), true);
 							return true;
@@ -500,8 +494,10 @@ void CGUIListBox::selectNew(s32 itemIndex, bool onlyHover)
 	recalculateScrollPos();
 
 	gui::EGUI_EVENT_TYPE eventType = (Selected == oldSelected && now < SelectTime + 500) ? EGET_LISTBOX_SELECTED_AGAIN : EGET_LISTBOX_CHANGED;
+
 	if (!onlyHover)
 		SelectTime = now;
+
 	// post the news
 	if (Parent && !onlyHover)
 	{

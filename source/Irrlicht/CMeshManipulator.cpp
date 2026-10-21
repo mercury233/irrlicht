@@ -1437,12 +1437,12 @@ s32 CMeshManipulator::getPolyCount(const scene::IMesh* mesh) const
 	if (!mesh)
 		return 0;
 
-	s32 trianglecount = 0;
+	s32 polycount = 0;
 
 	for (u32 g=0; g<mesh->getMeshBufferCount(); ++g)
-		trianglecount += mesh->getMeshBuffer(g)->getIndexCount() / 3;
+		polycount += mesh->getMeshBuffer(g)->getPrimitiveCount();
 
-	return trianglecount;
+	return polycount;
 }
 
 

@@ -1,5 +1,7 @@
 --------------------------
 Changes in 1.9 (not yet released)
+- string::reserve from now on expects size without null terminator, so it will allocate memory for 1 more character
+- Add function string::capacity
 - Escape key in ComboBox now working (not sure since when it was broken... 1.8 already didn't, but probably some earlier version was OK)
 - Fix: CMeshManipulator::getPolyCount no longer assumes every mesh is made of triangles
 - Listbox now ensures HoverSelected is applied on lmouse-up and reset when losing focus.

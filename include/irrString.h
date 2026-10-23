@@ -519,8 +519,29 @@ public:
 		used = 1;
 	}
 
+	//! Returns the number of characters for which we have memory reserved
+	//! Null terminator excluded, so capacity() is >= size()
+	u32 capacity() const
+	{
+		return allocated-1;
+	}
+
+	//! Reserves memory capacity for given amount of characters
+	/** Only increases memory, never releases.
+	\param count: Amount of characters to reserve. Null terminator excluded. 
+		    Note: Up to Irrlicht 1.8 count needed to include the null terminator.
+			Since 1.9 it's usually reserve(strlen). Old code might reserve 1 more 
+			character now, but that's usually no problem. */
+	void reserve(u32 count)
+	{
+		if (count <= capacity())
+			return;
+
+		reallocate(count+1);
+	}
+
 	//! Returns character string
-	/** \return pointer to C-style NUL terminated string. */
+	/** \return pointer to C-style null terminated string. */
 	const T* c_str() const
 	{
 		return array;
@@ -739,10 +760,10 @@ public:
 	{
 		if ( pos < used )
 		{
-			reserve(used+n);
+			const u32 end = used+n-1;
+			reserve(end);
 
 			// move stuff behind insert point
-			const u32 end = used+n-1;
 			for (u32 i=0; i<used-pos; ++i)
 			{
 				array[end-i] = array[end-(i+n)];
@@ -757,17 +778,6 @@ public:
 
 		return *this;
 	}
-
-	//! Reserves some memory.
-	/** \param count: Amount of characters to reserve. */
-	void reserve(u32 count)
-	{
-		if (count < allocated)
-			return;
-
-		reallocate(count);
-	}
-
 
 	//! finds first occurrence of character in string
 	/** \param c: Character to search for.
@@ -955,7 +965,7 @@ public:
 			return string<T>("");
 
 		string<T> o;
-		o.reserve(length+1);
+		o.reserve(length);
 
 		if ( !make_lower )
 		{
@@ -1427,6 +1437,8 @@ public:
 private:
 
 	//! Reallocate the array, make it bigger or smaller
+	//! Keep as much of the existing string intact as still fits after reallocation
+	//\param new_size Amount of characters _including_ null terminator
 	void reallocate(u32 new_size)
 	{
 		T* old_array = array;
@@ -1487,7 +1499,7 @@ static size_t multibyteToWString(string<wchar_t>& destination, const char* sourc
 {
 	if ( sourceSize )
 	{
-		destination.reserve(sourceSize+1);
+		destination.reserve(sourceSize);
 #if defined(_MSC_VER)
 #pragma warning(push)
 #pragma warning(disable: 4996)	// 'mbstowcs': This function or variable may be unsafe. Consider using mbstowcs_s instead.

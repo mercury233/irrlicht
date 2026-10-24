@@ -1334,7 +1334,7 @@ public:
 	\param index: Index of element to be erased. */
 	string<T,TAlloc>& erase(u32 index)
 	{
-		IRR_DEBUG_BREAK_IF(index>=used) // access violation
+		IRR_DEBUG_BREAK_IF(index>=size()) // access violation
 
 		for (u32 i=index+1; i<used; ++i)
 			array[i-1] = array[i];

@@ -1,5 +1,8 @@
 --------------------------
 Changes in 1.9 (not yet released)
+- strings have now small string optimization. Empty and short strings no longer allocate heap memory.
+  The cost is 16 exta bytes per string object.
+  Note: breaks binary compatibility for dll's (again).
 - string::reserve from now on expects size without null terminator, so it will allocate memory for 1 more character
 - Add function string::capacity
 - Escape key in ComboBox now working (not sure since when it was broken... 1.8 already didn't, but probably some earlier version was OK)

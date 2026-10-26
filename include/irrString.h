@@ -499,6 +499,7 @@ public:
 	the trailing NUL. */
 	u32 size() const
 	{
+		IRR_DEBUG_BREAK_IF(used==0) // should be impossible
 		return used-1;
 	}
 
@@ -1096,7 +1097,7 @@ public:
 	\param replaceWith The string replacing the old one. */
 	string<T,TAlloc>& replace(const string<T,TAlloc>& toReplace, const string<T,TAlloc>& replaceWith)
 	{
-		if (toReplace.size() == 0)
+		if (empty() || toReplace.empty())
 			return *this;
 
 		const T* other = toReplace.c_str();
@@ -1222,12 +1223,12 @@ public:
 	}
 
 
-	//! Removes a string from the string.
+	//! Removes all instances of given string from the original string.
 	/** \param toRemove: String to remove. */
 	string<T,TAlloc>& remove(const string<T,TAlloc>& toRemove)
 	{
 		u32 size = toRemove.size();
-		if ( size == 0 )
+		if ( size == 0 || empty() )
 			return *this;
 		u32 pos = 0;
 		u32 found = 0;
@@ -1259,7 +1260,7 @@ public:
 	/** \param characters: Characters to remove. */
 	string<T,TAlloc>& removeChars(const string<T,TAlloc> & characters)
 	{
-		if (characters.size() == 0)
+		if (empty() || characters.empty())
 			return *this;
 
 		u32 pos = 0;
@@ -1316,7 +1317,7 @@ public:
 	*/
 	string<T,TAlloc>& eraseTrailingFloatZeros(char decimalPoint='.')
 	{
-		s32 i=findLastCharNotInList("0", 1);
+		s32 i=findLastCharNotInList("0", 1); // find character before the 0's
 		if ( i > 0 && (u32)i < used-2 )	// non 0 must be found and not last char (also used is at least 2 when i > 0)
 		{
 			u32 eraseStart=i+1;

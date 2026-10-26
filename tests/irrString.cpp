@@ -103,6 +103,64 @@ static bool testReplace()
 	if ( str != L"keepme" )
 		return false;
 
+	// empty string
+	str.clear();
+	str.replace("abc", "def");
+	str.replace("abc", "defeg");
+	str.replace("abc", "d");
+	if ( str != L"" )
+		return false;
+
+	return true;
+}
+
+static bool testRemove()
+{
+	core::stringw str;
+	core::stringw rm;
+	str.remove(rm);
+	if ( str != "" )
+		return false;
+
+	str = "yowheeyo";
+	str.remove(rm);
+	if ( str != "yowheeyo" )
+		return false;
+
+	rm = "yo";
+	str.remove(rm);
+	if ( str != "whee" )
+		return false;
+
+	rm = "eh";
+	str.remove(rm);
+	if ( str != "whee" )
+		return false;
+
+	rm = "abc";
+	str.remove(rm);
+	if ( str != "whee" )
+		return false;
+
+	rm = "he";
+	str.remove(rm);
+	if ( str != "we" )
+		return false;
+
+	rm = "were";
+	str.remove(rm);
+	if ( str != "we" )
+		return false;
+
+	rm = "we";
+	str.remove(rm);
+	if ( str != "" )
+		return false;
+
+	str.remove(rm);
+	if ( str != "" )
+		return false;
+
 	return true;
 }
 
@@ -499,6 +557,9 @@ bool testIrrString(void)
 
 	logTestString("test replace\n");
 	allExpected &= testReplace();
+
+	logTestString("test remove\n");
+	allExpected &= testRemove();
 
 	logTestString("test make_lower and make_uppers\n");
 	allExpected &= testLowerUpper();

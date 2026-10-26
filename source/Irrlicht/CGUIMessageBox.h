@@ -41,6 +41,7 @@ namespace gui
 
 		void refreshControls();
 		void setButton(IGUIButton*& button, bool isAvailable, const core::rect<s32> & btnRect, const wchar_t * text, IGUIElement*& focusMe);
+		void sendEventAndRemove(EGUI_EVENT_TYPE type);
 
 		IGUIButton* OkButton;
 		IGUIButton* CancelButton;

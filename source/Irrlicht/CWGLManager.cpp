@@ -489,6 +489,15 @@ void CWGLManager::destroyContext()
 
 bool CWGLManager::swapBuffers()
 {
+	HWND hWnd = (HWND)CurrentContext.OpenGLWin32.HWnd;
+	if (hWnd)
+	{
+		RECT clientRect;
+		if (IsIconic(hWnd) || (GetClientRect(hWnd, &clientRect) &&
+			(clientRect.right - clientRect.left == 0 || clientRect.bottom - clientRect.top == 0)))
+			return true;
+	}
+
 	return SwapBuffers((HDC)CurrentContext.OpenGLWin32.HDc) == TRUE;
 }
 

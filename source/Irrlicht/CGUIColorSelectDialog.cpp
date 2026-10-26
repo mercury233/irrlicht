@@ -331,15 +331,19 @@ bool CGUIColorSelectDialog::OnEvent(const SEvent& event)
 					if (event.GUIEvent.Caller == CloseButton ||
 						event.GUIEvent.Caller == CancelButton)
 					{
+						grab();
 						sendCancelEvent();
 						remove();
+						drop();
 						return true;
 					}
 					else
 					if (event.GUIEvent.Caller == OKButton)
 					{
+						grab();
 						sendSelectedEvent();
 						remove();
+						drop();
 						return true;
 					}
 					break;

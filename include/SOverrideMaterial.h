@@ -59,8 +59,9 @@ namespace video
 		core::array<SMaterialTypeReplacement> MaterialTypes;
 
 		//! Default constructor
-		SOverrideMaterial() : EnableFlags(0), EnablePasses(0), Enabled(false)
+		SOverrideMaterial()
 		{
+			reset();
 		}
 
 		//! disable overrides and reset all flags

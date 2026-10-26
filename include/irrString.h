@@ -652,13 +652,17 @@ public:
 	/** \param character: Character to append. */
 	string<T,TAlloc>& append(T character)
 	{
-		if (used + 1 > allocated)
-			reallocate(used + 1);
+		const u32 newUsed = used + 1;
+		if ( newUsed < used ) // avoid u32 overflow
+			return *this;
+			
+		if (newUsed > allocated)
+			reallocate(newUsed);
 
-		++used;
+		array[newUsed-2] = character;
+		array[newUsed-1] = 0;
 
-		array[used-2] = character;
-		array[used-1] = 0;
+		used = newUsed;
 
 		return *this;
 	}
@@ -683,7 +687,7 @@ public:
 			return *this;
 
 		const u32 newUsed = used + len;
-		if ( newUsed < used ) // avoid overflow
+		if ( newUsed < used ) // avoid u32 overflow
 			return *this;
 
 		if (newUsed > allocated)
@@ -692,9 +696,9 @@ public:
 		const u32 start = used-1;
 		for (u32 l=0; l<len; ++l)
 			array[l+start] = *(other+l);
+		array[newUsed-1] = 0;		
 
 		used = newUsed;
-		array[used-1] = 0;
 
 		return *this;
 	}
@@ -704,19 +708,23 @@ public:
 	/** \param other: String to append. */
 	string<T,TAlloc>& append(const string<T,TAlloc>& other)
 	{
-		if (other.size() == 0)
+		const u32 otherSize = other.size();
+		if (otherSize == 0)
 			return *this;
 
-		--used;
-		const u32 len = other.size()+1;
+		const irr::u32 newUsed = used + otherSize; // at least 2
+		if ( newUsed < used ) // avoid u32 overflow
+			return *this;
 
-		if (used + len > allocated)
-			reallocate(used + len);
+		if (newUsed > allocated)
+			reallocate(newUsed);
 
-		for (u32 l=0; l<len; ++l)
-			array[used+l] = other[l];
+		const u32 start = used-1;
+		for (u32 l=0; l<otherSize; ++l)
+			array[start+l] = other[l];
+		array[newUsed-1] = 0;
 
-		used += len;
+		used = newUsed;
 
 		return *this;
 	}
@@ -727,27 +735,29 @@ public:
 	\param length: How much characters of the other string to add to this one. */
 	string<T,TAlloc>& append(const string<T,TAlloc>& other, u32 length)
 	{
-		if (other.size() == 0)
+		const u32 otherSize = other.size();
+		if (otherSize == 0 || length == 0)
 			return *this;
 
-		if (other.size() < length)
+		if (otherSize < length)
 		{
 			append(other);
 			return *this;
 		}
 
-		if (used + length > allocated)
-			reallocate(used + length);
+		const irr::u32 newUsed = used + length;
+		if ( newUsed < used ) // avoid u32 overflow
+			return *this;
+			
+		if (newUsed > allocated)
+			reallocate(newUsed);
 
-		--used;
-
-		for (u32 l=0; l<length; ++l)
-			array[l+used] = other[l];
-		used += length;
-
-		// ensure proper termination
-		array[used]=0;
-		++used;
+		const u32 start = used-1;
+		for (u32 l=0; l<length; ++l)	
+			array[l+start] = other[l];
+		array[newUsed-1] = 0;
+		
+		used = newUsed;
 
 		return *this;
 	}
@@ -761,6 +771,9 @@ public:
 		if ( pos < used )
 		{
 			const u32 end = used+n-1;
+			if (end < used) // avoid u32 overflow or n==0
+				return *this;
+		
 			reserve(end);
 
 			// move stuff behind insert point

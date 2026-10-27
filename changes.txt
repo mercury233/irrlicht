@@ -1,5 +1,6 @@
 --------------------------
 Changes in 1.9 (not yet released)
+- Add setName/getName interface to IMeshBuffer
 - Add getNameStr functions to IGUIElement and ISceneNode to allow getting name without a conversion to c-string
 - strings have now small string optimization. Empty and short strings no longer allocate heap memory.
   The cost is 16 exta bytes per string object.

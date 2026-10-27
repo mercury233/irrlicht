@@ -1,5 +1,6 @@
 --------------------------
 Changes in 1.9 (not yet released)
+- obj format reader/writer now pass through the group names for mesh buffers when available (otherwise writer has old behaviour)
 - Add setName/getName interface to IMeshBuffer
 - Add getNameStr functions to IGUIElement and ISceneNode to allow getting name without a conversion to c-string
 - strings have now small string optimization. Empty and short strings no longer allocate heap memory.

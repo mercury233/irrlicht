@@ -420,17 +420,19 @@ irr::core::stringc SJoystickWin32Control::findJoystickName(int index, const JOYC
                                  NULL, &regsize);
     if (regresult == ERROR_SUCCESS)
     {
-        char *name;
         /* allocate enough memory for the OEM name text ... */
-        name = new char[regsize];
+        char *name = new char[regsize];
         if (name)
         {
             /* ... and read it from the registry */
             regresult = RegQueryValueEx(hKey, REGSTR_VAL_JOYOEMNAME, 0, 0,
                                          (LPBYTE)name, &regsize );
-            result = name;
+			if (regresult == ERROR_SUCCESS)
+			{
+				result = name;
+			}
+			delete[] name;
         }
-        delete[] name;
     }
     RegCloseKey(hKey);
 

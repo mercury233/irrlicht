@@ -1436,7 +1436,7 @@ void CD3D9Driver::draw2D3DVertexPrimitiveList(const void* vertices,
 			else
 				pID3DDevice->DrawIndexedPrimitiveUP(D3DPT_TRIANGLEFAN, 0, vertexCount, primitiveCount,
 						indexList, indexType, vertices, stride);
-				break;
+			break;
 		case scene::EPT_TRIANGLES:
 			if(!vertices)
 			{

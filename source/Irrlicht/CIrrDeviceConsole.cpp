@@ -82,7 +82,7 @@ CIrrDeviceConsole::CIrrDeviceConsole(const SIrrlichtCreationParameters& params)
 		if (SetConsoleDisplayMode(WindowsSTDOut, CONSOLE_FULLSCREEN_MODE, &dimensions))
 		{
 			CreationParams.WindowSize.Width = dimensions.X;
-			CreationParams.WindowSize.Width = dimensions.Y;
+			CreationParams.WindowSize.Height = dimensions.Y;
 		}
 #endif
 	}
@@ -90,7 +90,7 @@ CIrrDeviceConsole::CIrrDeviceConsole(const SIrrlichtCreationParameters& params)
 	{
 		COORD ConsoleSize;
 		ConsoleSize.X = CreationParams.WindowSize.Width;
-		ConsoleSize.X = CreationParams.WindowSize.Height;
+		ConsoleSize.Y = CreationParams.WindowSize.Height;
 		SetConsoleScreenBufferSize(WindowsSTDOut, ConsoleSize);
 	}
 

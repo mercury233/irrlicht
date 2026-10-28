@@ -202,7 +202,7 @@ void* CD3D9Texture::lock(E_TEXTURE_LOCK_MODE mode, u32 mipmapLevel, u32 layer, E
 	LockReadOnly = (mode == ETLM_READ_ONLY);
 	LockLayer = layer;
 
-	HRESULT hr;
+	HRESULT hr = 0;
 	D3DLOCKED_RECT rect;
 
 	if (!IsRenderTarget)

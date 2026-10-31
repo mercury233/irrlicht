@@ -48,12 +48,19 @@ enum
 	GUI_ID_Y_SCALE,
 	GUI_ID_Z_SCALE,
 
+	GUI_ID_X_ROT,
+	GUI_ID_Y_ROT,
+	GUI_ID_Z_ROT,
+
+	GUI_ID_MAIN_MENU,
+
 	GUI_ID_OPEN_MODEL,
 	GUI_ID_SET_MODEL_ARCHIVE,
 	GUI_ID_LOAD_AS_OCTREE,
 
 	GUI_ID_SKY_BOX_VISIBLE,
 	GUI_ID_TOGGLE_DEBUG_INFO,
+	GUI_ID_MENU_MATERIAL_FLAGS,
 
 	GUI_ID_DEBUG_OFF,
 	GUI_ID_DEBUG_BOUNDING_BOX,
@@ -68,6 +75,8 @@ enum
 	GUI_ID_MODEL_MATERIAL_TRANSPARENT,
 	GUI_ID_MODEL_MATERIAL_REFLECTION,
 
+	GUI_ID_MODEL_FLAG_BACK_FACE_CULLING,
+
 	GUI_ID_CAMERA_MAYA,
 	GUI_ID_CAMERA_FIRST_PERSON,
 
@@ -80,7 +89,6 @@ enum
 	GUI_ID_SKIN_TRANSPARENCY,
 	GUI_ID_SKIN_ANIMATION_FPS,
 
-	GUI_ID_BUTTON_SET_SCALE,
 	GUI_ID_BUTTON_SCALE_MUL10,
 	GUI_ID_BUTTON_SCALE_DIV10,
 	GUI_ID_BUTTON_OPEN_MODEL,
@@ -125,27 +133,87 @@ void setSkinTransparency(s32 alpha, irr::gui::IGUISkin * skin)
 }
 
 /*
-  Update the display of the model scaling
+  Update the UI for the model scaling
 */
 void updateScaleInfo(scene::ISceneNode* model)
 {
 	IGUIElement* toolboxWnd = Device->getGUIEnvironment()->getRootGUIElement()->getElementFromId(GUI_ID_DIALOG_ROOT_WINDOW, true);
-	if (!toolboxWnd)
-		return;
-	if (!model)
+	if (toolboxWnd)
 	{
-		toolboxWnd->getElementFromId(GUI_ID_X_SCALE, true)->setText( L"-" );
-		toolboxWnd->getElementFromId(GUI_ID_Y_SCALE, true)->setText( L"-" );
-		toolboxWnd->getElementFromId(GUI_ID_Z_SCALE, true)->setText( L"-" );
-	}
-	else
-	{
-		core::vector3df scale = model->getScale();
-		toolboxWnd->getElementFromId(GUI_ID_X_SCALE, true)->setText( core::stringw(scale.X).c_str() );
-		toolboxWnd->getElementFromId(GUI_ID_Y_SCALE, true)->setText( core::stringw(scale.Y).c_str() );
-		toolboxWnd->getElementFromId(GUI_ID_Z_SCALE, true)->setText( core::stringw(scale.Z).c_str() );
+		core::vector3df scale(1.f, 1.f, 1.f);
+		if (model)
+		{
+			scale = model->getScale();
+		}
+		toolboxWnd->getElementFromId(GUI_ID_X_SCALE, true)->setText( core::stringw(scale.X).eraseTrailingFloatZeros().c_str() );
+		toolboxWnd->getElementFromId(GUI_ID_Y_SCALE, true)->setText( core::stringw(scale.Y).eraseTrailingFloatZeros().c_str() );
+		toolboxWnd->getElementFromId(GUI_ID_Z_SCALE, true)->setText( core::stringw(scale.Z).eraseTrailingFloatZeros().c_str() );
 	}
 }
+
+/*
+  Get scale from UI
+*/
+irr::core::vector3df getScaleInfo()
+{
+	core::vector3df scale(1.f, 1.f, 1.f);
+
+	IGUIElement* toolboxWnd = Device->getGUIEnvironment()->getRootGUIElement()->getElementFromId(GUI_ID_DIALOG_ROOT_WINDOW, true);
+	if (toolboxWnd)
+	{
+		core::stringc s;
+		s = toolboxWnd->getElementFromId(GUI_ID_X_SCALE, true)->getText();
+		scale.X = (f32)atof(s.c_str());
+		s = toolboxWnd->getElementFromId(GUI_ID_Y_SCALE, true)->getText();
+		scale.Y = (f32)atof(s.c_str());
+		s = toolboxWnd->getElementFromId(GUI_ID_Z_SCALE, true)->getText();
+		scale.Z = (f32)atof(s.c_str());
+	}
+
+	return scale;
+}
+
+/*
+  Update the UI for the model rotation
+*/
+void updateRotationInfo(scene::ISceneNode* model)
+{
+	IGUIElement* toolboxWnd = Device->getGUIEnvironment()->getRootGUIElement()->getElementFromId(GUI_ID_DIALOG_ROOT_WINDOW, true);
+	if (toolboxWnd)
+	{
+		core::vector3df rotation(1.f, 1.f, 1.f);
+		if (model)
+		{
+			rotation = model->getRotation();
+		}
+		toolboxWnd->getElementFromId(GUI_ID_X_ROT, true)->setText( core::stringw(rotation.X).eraseTrailingFloatZeros().c_str() );
+		toolboxWnd->getElementFromId(GUI_ID_Y_ROT, true)->setText( core::stringw(rotation.Y).eraseTrailingFloatZeros().c_str() );
+		toolboxWnd->getElementFromId(GUI_ID_Z_ROT, true)->setText( core::stringw(rotation.Z).eraseTrailingFloatZeros().c_str() );
+	}
+}
+
+/*
+  Get rotation from UI
+*/
+irr::core::vector3df getRotationInfo()
+{
+	core::vector3df rotation(0.f, 0.f, 0.f);
+
+	IGUIElement* toolboxWnd = Device->getGUIEnvironment()->getRootGUIElement()->getElementFromId(GUI_ID_DIALOG_ROOT_WINDOW, true);
+	if (toolboxWnd)
+	{
+		core::stringc s;
+		s = toolboxWnd->getElementFromId(GUI_ID_X_ROT, true)->getText();
+		rotation.X = (f32)atof(s.c_str());
+		s = toolboxWnd->getElementFromId(GUI_ID_Y_ROT, true)->getText();
+		rotation.Y = (f32)atof(s.c_str());
+		s = toolboxWnd->getElementFromId(GUI_ID_Z_ROT, true)->getText();
+		rotation.Z = (f32)atof(s.c_str());
+	}
+
+	return rotation;
+}
+
 
 /*
 Function showAboutText() displays a messagebox with a caption and
@@ -248,16 +316,29 @@ void loadModel(const io::path& filename)
 	}
 	Model->setMaterialFlag(video::EMF_LIGHTING, UseLight);
 	Model->setMaterialFlag(video::EMF_NORMALIZE_NORMALS, UseLight);
-//	Model->setMaterialFlag(video::EMF_BACK_FACE_CULLING, false);
 	Model->setDebugDataVisible(scene::EDS_OFF);
+	const bool backFaceCulling = true;
+	Model->setMaterialFlag(video::EMF_BACK_FACE_CULLING, backFaceCulling);
 
-	// we need to uncheck the menu entries. would be cool to fake a menu event, but
-	// that's not so simple. so we do it brute force
-	gui::IGUIContextMenu* menu = (gui::IGUIContextMenu*)Device->getGUIEnvironment()->getRootGUIElement()->getElementFromId(GUI_ID_TOGGLE_DEBUG_INFO, true);
-	if (menu)
-		for(int item = 1; item < 7; ++item)
-			menu->setItemChecked(item, false);
+	// Set the menu entries
+	gui::IGUIContextMenu* mainMenu = (gui::IGUIContextMenu*)Device->getGUIEnvironment()->getRootGUIElement()->getElementFromId(GUI_ID_MAIN_MENU);
+	if ( mainMenu )
+	{
+		// Debug info simply all reset
+		gui::IGUIContextMenu* menu = (gui::IGUIContextMenu*)mainMenu->getElementFromId(GUI_ID_TOGGLE_DEBUG_INFO, true);
+		if (menu)
+			for(int item = 1; item < 7; ++item)
+				menu->setItemChecked(item, false);
+		menu = (gui::IGUIContextMenu*)mainMenu->getElementFromId(GUI_ID_MENU_MATERIAL_FLAGS, true);
+		if ( menu )
+		{
+			s32 itemId = menu->findItemWithCommandId(GUI_ID_MODEL_FLAG_BACK_FACE_CULLING);
+			if ( itemId >= 0 )
+				menu->setItemChecked(itemId, backFaceCulling);
+		}
+	}
 	updateScaleInfo(Model);
+	updateRotationInfo(Model);
 }
 
 
@@ -277,7 +358,7 @@ void createToolBox()
 		e->remove();
 
 	// create the toolbox window
-	IGUIWindow* wnd = env->addWindow(core::rect<s32>(600,45,800,480),
+	IGUIWindow* wnd = env->addWindow(core::rect<s32>(600,45,800,440),
 		false, L"Toolset", 0, GUI_ID_DIALOG_ROOT_WINDOW);
 
 	// create tab control and tabs
@@ -286,45 +367,51 @@ void createToolBox()
 
 	IGUITab* t1 = tab->addTab(L"Config");
 
-	// add some edit boxes and a button to tab one
-	env->addStaticText(L"Scale:",
-			core::rect<s32>(10,20,60,45), false, false, t1);
-	env->addStaticText(L"X:", core::rect<s32>(22,48,40,66), false, false, t1);
-	env->addEditBox(L"1.0", core::rect<s32>(40,46,130,66), true, t1, GUI_ID_X_SCALE);
-	env->addStaticText(L"Y:", core::rect<s32>(22,82,40,96), false, false, t1);
-	env->addEditBox(L"1.0", core::rect<s32>(40,76,130,96), true, t1, GUI_ID_Y_SCALE);
-	env->addStaticText(L"Z:", core::rect<s32>(22,108,40,126), false, false, t1);
-	env->addEditBox(L"1.0", core::rect<s32>(40,106,130,126), true, t1, GUI_ID_Z_SCALE);
+	// Add scale settings to tab
+	env->addStaticText(L"Scale", core::rect<s32>(10,20,185,86), true, false, t1);
 
-	env->addButton(core::rect<s32>(10,134,85,165), t1, GUI_ID_BUTTON_SET_SCALE, L"Set");
+	env->addButton(core::rect<s32>(70,20,125,40), t1, GUI_ID_BUTTON_SCALE_MUL10, L"* 10");
+	env->addButton(core::rect<s32>(130,20,185,40), t1, GUI_ID_BUTTON_SCALE_DIV10, L"* 0.1");
 
-	// quick scale buttons
-	env->addButton(core::rect<s32>(65,20,95,40), t1, GUI_ID_BUTTON_SCALE_MUL10, L"* 10");
-	env->addButton(core::rect<s32>(100,20,130,40), t1, GUI_ID_BUTTON_SCALE_DIV10, L"* 0.1");
+	env->addStaticText(L"X", core::rect<s32>(25,45,50,65), false, false, t1);
+	env->addStaticText(L"Y", core::rect<s32>(85,45,100,65), false, false, t1);
+	env->addStaticText(L"Z", core::rect<s32>(145,45,170,65), false, false, t1);
+	env->addEditBox(L"1.0", core::rect<s32>(10,66,65,86), true, t1, GUI_ID_X_SCALE);
+	env->addEditBox(L"1.0", core::rect<s32>(70,66,125,86), true, t1, GUI_ID_Y_SCALE);
+	env->addEditBox(L"1.0", core::rect<s32>(130,66,185,86), true, t1, GUI_ID_Z_SCALE);
 
 	updateScaleInfo(Model);
 
-	// add transparency control
-	env->addStaticText(L"GUI Transparency Control:",
-			core::rect<s32>(10,200,150,225), true, false, t1);
-	IGUIScrollBar* scrollbar = env->addScrollBar(true,
-			core::rect<s32>(10,225,150,240), t1, GUI_ID_SKIN_TRANSPARENCY);
-	scrollbar->setMax(255);
-	scrollbar->setPos(255);
+	// Add rotation settings to tab
+	env->addStaticText(L"Rotation", core::rect<s32>(10,90,185,146), true, false, t1);
+	env->addStaticText(L"X", core::rect<s32>(25,105,50,125), false, false, t1);
+	env->addStaticText(L"Y", core::rect<s32>(85,105,100,125), false, false, t1);
+	env->addStaticText(L"Z", core::rect<s32>(145,105,170,125), false, false, t1);
+	env->addEditBox(L"0.0", core::rect<s32>(10,126,65,146), true, t1, GUI_ID_X_ROT);
+	env->addEditBox(L"0.0", core::rect<s32>(70,126,125,146), true, t1, GUI_ID_Y_ROT);
+	env->addEditBox(L"0.0", core::rect<s32>(130,126,185,146), true, t1, GUI_ID_Z_ROT);
+
+	updateRotationInfo(Model);
+
 
 	// add framerate control
-	env->addStaticText(L":", core::rect<s32>(10,240,150,265), true, false, t1);
-	env->addStaticText(L"Framerate:",
-			core::rect<s32>(12,240,75,265), false, false, t1);
+	env->addStaticText(L":", core::rect<s32>(10,240,185,265), true, false, t1);
+	env->addStaticText(L"Framerate:",core::rect<s32>(12,240,75,265), false, false, t1);
 	// current frame info
-	env->addStaticText(L"", core::rect<s32>(75,240,200,265), false, false, t1,
-			GUI_ID_ANIMATION_INFO);
-	scrollbar = env->addScrollBar(true,
-			core::rect<s32>(10,265,150,280), t1, GUI_ID_SKIN_ANIMATION_FPS);
+	env->addStaticText(L"", core::rect<s32>(75,240,200,265), false, false, t1,GUI_ID_ANIMATION_INFO);
+	IGUIScrollBar* scrollbar = env->addScrollBar(true, core::rect<s32>(10,265,185,280), t1, GUI_ID_SKIN_ANIMATION_FPS);
 	scrollbar->setMax(MAX_FRAMERATE);
 	scrollbar->setMin(-MAX_FRAMERATE);
 	scrollbar->setPos(DEFAULT_FRAMERATE);
 	scrollbar->setSmallStep(1);
+
+	// add transparency control
+	env->addStaticText(L"GUI Transparency Control", core::rect<s32>(10,290,185,330), true, false, t1);
+	scrollbar = env->addScrollBar(true, core::rect<s32>(10,315,185,330), t1, GUI_ID_SKIN_TRANSPARENCY);
+	scrollbar->setMin(10);
+	scrollbar->setMax(255);
+	scrollbar->setPos(255);
+
 }
 
 /*
@@ -428,6 +515,34 @@ public:
 
 			switch(event.GUIEvent.EventType)
 			{
+			case EGET_ELEMENT_FOCUS_LOST:
+				if ( id == GUI_ID_X_SCALE || id ==GUI_ID_Y_SCALE || id == GUI_ID_Z_SCALE )
+				{
+					// set model scale
+					if (Model)
+						Model->setScale(getScaleInfo());
+				}
+				else if ( id == GUI_ID_X_ROT || id == GUI_ID_Y_ROT || id == GUI_ID_Z_ROT )
+				{
+					// set model rotation
+					if (Model)
+						Model->setRotation(getRotationInfo());
+				}
+				break;
+			case EGET_EDITBOX_ENTER:
+				if ( id == GUI_ID_X_SCALE || id ==GUI_ID_Y_SCALE || id == GUI_ID_Z_SCALE )
+				{
+					// set model scale
+					if (Model)
+						Model->setScale(getScaleInfo());
+				}
+				else if ( id == GUI_ID_X_ROT || id == GUI_ID_Y_ROT || id == GUI_ID_Z_ROT )
+				{
+					// set model rotation
+					if (Model)
+						Model->setRotation(getRotationInfo());
+				}
+				break;
 			case EGET_MENU_ITEM_SELECTED:
 					// a menu item was clicked
 					OnMenuItemSelected( (IGUIContextMenu*)event.GUIEvent.Caller );
@@ -472,25 +587,6 @@ public:
 
 				switch(id)
 				{
-				case GUI_ID_BUTTON_SET_SCALE:
-					{
-						// set model scale
-						gui::IGUIElement* root = env->getRootGUIElement();
-						core::vector3df scale;
-						core::stringc s;
-
-						s = root->getElementFromId(GUI_ID_X_SCALE, true)->getText();
-						scale.X = (f32)atof(s.c_str());
-						s = root->getElementFromId(GUI_ID_Y_SCALE, true)->getText();
-						scale.Y = (f32)atof(s.c_str());
-						s = root->getElementFromId(GUI_ID_Z_SCALE, true)->getText();
-						scale.Z = (f32)atof(s.c_str());
-
-						if (Model)
-							Model->setScale(scale);
-						updateScaleInfo(Model);
-					}
-					break;
 				case GUI_ID_BUTTON_SCALE_MUL10:
 					if (Model)
 						Model->setScale(Model->getScale()*10.f);
@@ -669,7 +765,10 @@ public:
 			if (Model)
 				Model->setMaterialType(video::EMT_SPHERE_MAP);
 			break;
-
+		case GUI_ID_MODEL_FLAG_BACK_FACE_CULLING:
+			if (Model)
+				Model->setMaterialFlag(video::EMF_BACK_FACE_CULLING, menu->isItemChecked(menu->getSelectedItem()));
+			break;
 		case GUI_ID_CAMERA_MAYA:
 			setActiveCamera(Camera[0]);
 			break;
@@ -835,7 +934,7 @@ int main(int argc, char* argv[])
 	menu->getSubMenu(0), because the "File" entry is the menu item with
 	index 0.
 	*/
-	gui::IGUIContextMenu* menu = env->addMenu();
+	gui::IGUIContextMenu* menu = env->addMenu(0, GUI_ID_MAIN_MENU);
 	menu->addItem(L"File", -1, true, true);
 	menu->addItem(L"View", -1, true, true);
 	menu->addItem(L"Camera", -1, true, true);
@@ -852,7 +951,8 @@ int main(int argc, char* argv[])
 	submenu = menu->getSubMenu(1);
 	submenu->addItem(L"sky box visible", GUI_ID_SKY_BOX_VISIBLE, true, false, true);
 	submenu->addItem(L"toggle model debug information", GUI_ID_TOGGLE_DEBUG_INFO, true, true);
-	submenu->addItem(L"model material", -1, true, true );
+	submenu->addItem(L"model material type", -1, true, true );
+	submenu->addItem(L"model material flags", GUI_ID_MENU_MATERIAL_FLAGS, true, true);
 
 	submenu = submenu->getSubMenu(1);
 	submenu->addItem(L"Off", GUI_ID_DEBUG_OFF);
@@ -868,6 +968,9 @@ int main(int argc, char* argv[])
 	submenu->addItem(L"Solid", GUI_ID_MODEL_MATERIAL_SOLID);
 	submenu->addItem(L"Transparent", GUI_ID_MODEL_MATERIAL_TRANSPARENT);
 	submenu->addItem(L"Reflection", GUI_ID_MODEL_MATERIAL_REFLECTION);
+
+	submenu = menu->getSubMenu(1)->getSubMenu(3);
+	submenu->addItem(L"Backface culling", GUI_ID_MODEL_FLAG_BACK_FACE_CULLING, true, false, true, true);
 
 	submenu = menu->getSubMenu(2);
 	submenu->addItem(L"Maya Style", GUI_ID_CAMERA_MAYA);

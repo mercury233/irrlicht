@@ -457,7 +457,7 @@ bool CGUIListBox::OnEvent(const SEvent& event)
 				case EMIE_MOUSE_MOVED:
 					if (Selecting || MoveOverSelect)
 					{
-						if (isPointInside(p) && !ScrollBar->isPointInside(p))
+						if (isPointInside(p) && (!ScrollBar->isVisible() || !ScrollBar->isPointInside(p)))
 						{
 							selectNew(getItemAt(AbsoluteRect.UpperLeftCorner.X, event.MouseInput.Y), true);
 							return true;

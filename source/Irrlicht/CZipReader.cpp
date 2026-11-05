@@ -15,7 +15,6 @@ extern "C" void bz_internal_error(int errorCode)
 #ifdef __IRR_COMPILE_WITH_ZIP_ARCHIVE_LOADER_
 
 #include "CFileList.h"
-#include "CReadFile.h"
 #include "coreutil.h"
 
 #include "IrrCompileConfig.h"

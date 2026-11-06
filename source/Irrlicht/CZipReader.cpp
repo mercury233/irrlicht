@@ -123,7 +123,9 @@ bool CArchiveLoaderZIP::isALoadableFileFormat(io::IReadFile* file) const
 {
 	SZIPFileHeader header;
 
-	file->read( &header.Sig, 4 );
+	if ( file->read( &header.Sig, 4 ) != 4)
+		return false;
+
 #ifdef __BIG_ENDIAN__
 	header.Sig = os::Byteswap::byteswap(header.Sig);
 #endif
@@ -250,7 +252,7 @@ bool CZipReader::scanGZipHeader()
 		if (header.flags & EGZF_COMMENT)
 		{
 			c8 c='a';
-			while (c && File->read(&c, 1)) 
+			while (c && File->read(&c, 1))
 			{}
 		}
 

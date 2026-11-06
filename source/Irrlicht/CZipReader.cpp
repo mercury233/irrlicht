@@ -99,7 +99,7 @@ IFileArchive* CArchiveLoaderZIP::createArchive(io::IReadFile* file, bool ignoreC
 	{
 		file->seek(0);
 
-		u16 sig;
+		u16 sig = 0;
 		file->read(&sig, 2);
 
 #ifdef __BIG_ENDIAN__
@@ -562,11 +562,16 @@ IReadFile* CZipReader::createAndOpenFile(u32 index)
 	{
 		os::Printer::log("Reading encrypted file.");
 		u8 salt[16]={0};
-		const u16 saltSize = (((e.header.Sig & 0x00ff0000) >>16)+1)*4;
+		u16 saltSize = (((e.header.Sig & 0x00ff0000) >>16)+1)*4;
+		if ( saltSize > sizeof(salt) )
+		{
+			os::Printer::log("Invalid large salt size");
+			return 0;
+		}
 		File->seek(e.Offset);
 		File->read(salt, saltSize);
-		char pwVerification[2];
-		char pwVerificationFile[2];
+		char pwVerification[2]={0};
+		char pwVerificationFile[2]={0};
 		File->read(pwVerification, 2);
 		fcrypt_ctx zctx; // the encryption context
 		int rc = fcrypt_init(
@@ -583,7 +588,7 @@ IReadFile* CZipReader::createAndOpenFile(u32 index)
 		}
 		if ( saltSize+12u > e.header.DataDescriptor.CompressedSize )
 		{
-			os::Printer::log("Suspicous header");
+			os::Printer::log("Suspicious header, CompressedSize too small");
 			return 0;
 		}
 		decryptedSize= e.header.DataDescriptor.CompressedSize-saltSize-12;
@@ -604,8 +609,8 @@ IReadFile* CZipReader::createAndOpenFile(u32 index)
 			decryptedSize-c,   // how many bytes to decrypt
 			&zctx); // decryption context
 
-		char fileMAC[10];
-		char resMAC[10];
+		char fileMAC[10] = {0};
+		char resMAC[10] = {0};
 		rc = fcrypt_end(
 			(unsigned char*)resMAC, // on return contains the authentication code
 			&zctx); // encryption context

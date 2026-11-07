@@ -501,6 +501,8 @@ Changes in 1.9 (not yet released)
 
 --------------------------
 Changes in 1.8.6
+- Harden 3ds loader. It wasn't written with safety in mind, only use with files you trust.
+- Harden npk, pak, wad and tar archive readers.
 - Harden zip reader. Thanks @Lars Müller for reporting some of the problems. 
   There are likely many more security problems in it as this wasn't written with safety in mind.
   So only use with .zip files you trust.

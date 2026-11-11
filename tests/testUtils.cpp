@@ -283,28 +283,55 @@ static float fuzzyCompareImages(irr::video::IImage * image1,
 	u8 * image1Data = (u8*)image1->getData();
 	u8 * image2Data = (u8*)image2->getData();
 
-	const u32 pixels = (image1->getPitch()/image1->getBytesPerPixel()) * image1->getDimension().Height;
-	u32 mismatchedColours = 0;
-	for(u32 pixel = 0; pixel < pixels; ++pixel)
+	const u32 pitch1 = image1->getPitch();
+	const u32 pitch2 = image2->getPitch();
+	if ( pitch1 != pitch2 )
 	{
-		if (video::ECF_A8R8G8B8 == format1)
-			image1Data++;
+		logTestString("fuzzyCompareImages: both images need same pitch\n");
+		return 0.f;
+	}
+	
+	const core::dimension2du imageDim = image1->getDimension();
+	const u32 bytesPerPixel = image1->getBytesPerPixel();
+	const u32 skipPitchBytes = pitch1 - imageDim.Width*bytesPerPixel;
+	u32 mismatchedColours = 0;
+	u32 largestMismatch = 0;	// helps debugging
+	core::vector2d<u32> coordLargestMismatch; // helps debugging
+	for(u32 y=0; y < imageDim.Height; ++y )
+	{
+		for(u32 x = 0; x < imageDim.Width; ++x)
+		{
+			if (video::ECF_A8R8G8B8 == format1)
+				image1Data++;
 
-		const u8 r1 = *(image1Data++);
-		const u8 g1 = *(image1Data++);
-		const u8 b1 = *(image1Data++);
+			const u8 r1 = *(image1Data++);
+			const u8 g1 = *(image1Data++);
+			const u8 b1 = *(image1Data++);
 
-		if (video::ECF_A8R8G8B8 == format2)
-			image2Data++;
+			if (video::ECF_A8R8G8B8 == format2)
+				image2Data++;
 
-		const u8 r2 = *(image2Data++);
-		const u8 g2 = *(image2Data++);
-		const u8 b2 = *(image2Data++);
+			const u8 r2 = *(image2Data++);
+			const u8 g2 = *(image2Data++);
+			const u8 b2 = *(image2Data++);
 
-		mismatchedColours += abs(r1 - r2) + abs(g1 - g2) + abs(b1 - b2);
+			const u32 mismatch = abs(r1 - r2) + abs(g1 - g2) + abs(b1 - b2);
+			if ( mismatch > 0 )
+			{
+				mismatchedColours += mismatch;
+				if ( mismatch > largestMismatch )
+				{
+					largestMismatch = mismatch;
+					coordLargestMismatch.set(x,y);
+				}
+			}
+		}
+		image1Data += skipPitchBytes;
+		image2Data += skipPitchBytes;
 	}
 
-	const u32 totalColours = pixels * 255*3; // Maximal color difference
+	const u32 numPixels = image1->getImageDataSizeInPixels();
+	const u32 totalColours = numPixels * 255*3; // Maximal color difference
 	return 100.f * (totalColours - mismatchedColours) / totalColours;
 }
 

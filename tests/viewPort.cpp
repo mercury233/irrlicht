@@ -10,6 +10,23 @@ using namespace video;
 using namespace io;
 using namespace gui;
 
+static void setupTestScene(IVideoDriver* driver, ISceneManager * smgr, IGUIEnvironment* env)
+{
+	env->addCheckBox(true, core::recti(10,60,28,82));
+
+	IBillboardSceneNode * bnode = smgr->addBillboardSceneNode(0,dimension2d<f32>(32,32),core::vector3df(0,0,10));
+	bnode->setMaterialFlag(video::EMF_LIGHTING, false);
+	bnode->setMaterialType(video::EMT_TRANSPARENT_ADD_COLOR);
+	bnode->setMaterialTexture(0, driver->getTexture("../media/fire.bmp"));
+
+	smgr->addTextSceneNode(env->getBuiltInFont(), L"TEST", video::SColor(255,255,255,255), 0);
+	// Lighting off and vertex color to black to unify results a bit. Was with lighting in the past which made cube black on all but software driver.
+	irr::scene::IMeshSceneNode* cubeNode = smgr->addCubeSceneNode();
+	cubeNode->setMaterialFlag(video::EMF_LIGHTING, false);
+	smgr->getMeshManipulator()->setVertexColors(cubeNode->getMesh(), irr::video::SColor(255, 0,0,0));
+	smgr->addCameraSceneNode(0, vector3df(0,30,-40), vector3df(0,5,0));
+}
+
 //! Tests view ports and text rendering.
 /** The result should be as follows: We have three times the same image, a billboard with a cube and the text in front.
 They are replicated three times, one centered in the screen without viewport, one in the upper left (qurter screen) and
@@ -20,7 +37,8 @@ Finally, each scene has a checkbox drawn at the left side, vertically centered. 
 to viewports as well. */
 static bool viewPortText(E_DRIVER_TYPE driverType)
 {
-	IrrlichtDevice *device = createDevice( driverType, dimension2d<u32>(160, 120), 32);
+	dimension2du wndSize(160, 120);
+	IrrlichtDevice *device = createDevice( driverType, wndSize, 32);
 	if (!device)
 		return true; // Treat a failure to create a driver as benign; this saves a lot of #ifdefs
 
@@ -29,31 +47,21 @@ static bool viewPortText(E_DRIVER_TYPE driverType)
 	IGUIEnvironment* env = smgr->getGUIEnvironment();
 
 	stabilizeScreenBackground(driver);
-
-	env->addCheckBox(true, core::recti(10,60,28,82));
-
 	logTestString("Testing driver %ls\n", driver->getName());
 
-	IBillboardSceneNode * bnode = smgr->addBillboardSceneNode(0,dimension2d<f32>(32,32),core::vector3df(0,0,10));
-	bnode->setMaterialFlag(video::EMF_LIGHTING, false);
-	bnode->setMaterialType(video::EMT_TRANSPARENT_ADD_COLOR);
-	bnode->setMaterialTexture(0, driver->getTexture("../media/fire.bmp"));
-
-	smgr->addTextSceneNode(device->getGUIEnvironment()->getBuiltInFont(), L"TEST", video::SColor(255,255,255,255), 0);
-	smgr->addCubeSceneNode();
-	smgr->addCameraSceneNode(0, vector3df(0,30,-40), vector3df(0,5,0));
+	setupTestScene(driver, smgr, env);
 
 	driver->beginScene(video::ECBF_COLOR | video::ECBF_DEPTH, SColor(255,100,101,140));
 	smgr->drawAll();
 	env->drawAll();
-	driver->setViewPort(rect<s32>(0,0,160/2,120/2));
+	driver->setViewPort(rect<s32>(0,0,wndSize.Width/2,wndSize.Height/2));
 	smgr->drawAll();
 	env->drawAll();
-	driver->draw2DImage(driver->getTexture("../media/fire.bmp"), core::vector2di(160/2,120/2));
-	driver->setViewPort(rect<s32>(160/2,0,160,120));
+	driver->draw2DImage(driver->getTexture("../media/fire.bmp"), core::vector2di(wndSize.Width/2,wndSize.Height/2));
+	driver->setViewPort(rect<s32>(wndSize.Width/2,0,wndSize.Width,wndSize.Height));
 	smgr->drawAll();
 	env->drawAll();
-	driver->draw2DImage(driver->getTexture("../media/fire.bmp"), core::vector2di(160/2,120/2));
+	driver->draw2DImage(driver->getTexture("../media/fire.bmp"), core::vector2di(wndSize.Width/2,wndSize.Height/2));
 	driver->endScene(); 
 
 	bool result = takeScreenshotAndCompareAgainstReference(driver, "-viewPortText.png", 98.71f);
@@ -70,8 +78,7 @@ bool viewPort(void)
 {
 	bool result = true;
 
-	// TODO: software driver and burnings don't use view port for
-	// 2d rendering, so result is pretty wrong.
+	// TODO: software driver doesn't t use view port for 2d rendering, so result is pretty wrong.
 	TestWithAllDrivers(viewPortText);
 
 	return result;

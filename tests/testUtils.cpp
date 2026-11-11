@@ -283,7 +283,7 @@ static float fuzzyCompareImages(irr::video::IImage * image1,
 	u8 * image1Data = (u8*)image1->getData();
 	u8 * image2Data = (u8*)image2->getData();
 
-	const u32 pixels = (image1->getPitch() * image1->getDimension().Height) / 4;
+	const u32 pixels = (image1->getPitch()/image1->getBytesPerPixel()) * image1->getDimension().Height;
 	u32 mismatchedColours = 0;
 	for(u32 pixel = 0; pixel < pixels; ++pixel)
 	{
@@ -304,7 +304,7 @@ static float fuzzyCompareImages(irr::video::IImage * image1,
 		mismatchedColours += abs(r1 - r2) + abs(g1 - g2) + abs(b1 - b2);
 	}
 
-	const u32 totalColours = pixels * 255*3;
+	const u32 totalColours = pixels * 255*3; // Maximal color difference
 	return 100.f * (totalColours - mismatchedColours) / totalColours;
 }
 

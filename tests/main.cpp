@@ -49,7 +49,7 @@ int main(int argumentCount, char * arguments[])
 #if 0
 	// To interactively debug a test, move it (temporarily) in here and enable the define to only run this test
 	// Otherwise debugging is slightly tricky as each test runs in it's own process.
-		TEST(matrixOps);
+	TEST(viewPort);
 #else
 
 	TEST(disambiguateTextures); // Normally you should run this first, since it validates the working directory.
@@ -168,8 +168,8 @@ int main(int argumentCount, char * arguments[])
 
 	if(testToRun >= numberOfTests)
 	{
-		logTestString("\nError: invalid test %d (maximum %d)\n",
-					testToRun, numberOfTests-testToRun);
+		logTestString("\nError: invalid test %u (maximum %u)\n",
+					testToRun, numberOfTests);
 		return 9999;
 	}
 
@@ -183,19 +183,19 @@ int main(int argumentCount, char * arguments[])
 		{
 			for (unsigned int i=testToRun; i<numberOfTests; ++i)
 			{
-				logTestString("\nStarting test %d, '%s'\n",
+				logTestString("\nStarting test %u, '%s'\n",
 						i, tests[i].testName);
 				if (spawn)
 				{
 					closeTestLog();
 					char runNextTest[256];
-					(void)snprintf_irr(runNextTest, sizeof(runNextTest), "\"%s\" -%d 1", arguments[0], i+1);
+					(void)snprintf_irr(runNextTest, sizeof(runNextTest), "\"%s\" -%u 1", arguments[0], i+1);
 					// Spawn the next test in a new process.
 					if (system(runNextTest))
 					{
 						(void)openTestLog(false);
 						logTestString("\n******** Test failure ********\n"\
-								"Test %d '%s' failed\n"\
+								"Test %u '%s' failed\n"\
 								"******** Test failure ********\n",
 								i, tests[i].testName);
 						++fails;
@@ -208,7 +208,7 @@ int main(int argumentCount, char * arguments[])
 					if (!tests[i].testSignature())
 					{
 						logTestString("\n******** Test failure ********\n"\
-								"Test %d '%s' failed\n"\
+								"Test %u '%s' failed\n"\
 								"******** Test failure ********\n",
 								i, tests[i].testName);
 						++fails;
@@ -216,10 +216,10 @@ int main(int argumentCount, char * arguments[])
 				}
 			}
 		}
-		const int passed = testCount - fails;
+		const unsigned int passed = testCount - fails;
 
-		logTestString("\nTests finished. %d test%s of %d passed.\n\n",
-			passed, 1 == passed ? "" : "s", testCount);
+		logTestString("\nTests finished. %u test%s of %u passed.\n\n",
+			passed, 1u == passed ? "" : "s", testCount);
 
 		if(0 == fails && testCount==tests.size())
 		{
@@ -231,8 +231,8 @@ int main(int argumentCount, char * arguments[])
 			FILE * testsLastPassedAtFile = fopen("tests-last-passed-at.txt", "w");
 			if(testsLastPassedAtFile)
 			{
-				(void)fprintf(testsLastPassedAtFile, "Tests finished. %d test%s of %d passed.\n",
-			passed, 1 == passed ? "" : "s", numberOfTests);
+				(void)fprintf(testsLastPassedAtFile, "Tests finished. %u test%s of %u passed.\n",
+			passed, 1u == passed ? "" : "s", numberOfTests);
 #ifdef _DEBUG
 				(void)fprintf(testsLastPassedAtFile, "Compiled as DEBUG\n");
 #else
@@ -251,7 +251,7 @@ int main(int argumentCount, char * arguments[])
 		else
 			printf("See tests.log for results. Or set $PAGER environment variable to show it directly.\n");
 #endif
-		return fails;
+		return (int)fails;
 	}
 	else
 	{

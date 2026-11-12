@@ -1,5 +1,6 @@
 --------------------------
 Changes in 1.9 (not yet released)
+- Fix getViewPort not returning changed viewport values after setting render targets in D3D9 and OpenGL
 - Fix fuzzyCompareImages used in tests ignoring the lower 25% part of the images.
 - CD3D9Driver::createScreenShot now using back buffer instead of front buffer in windowed mode to avoid window decoration in screenshots.
 - obj format reader/writer now pass through the group names for mesh buffers when available (otherwise writer has old behaviour)

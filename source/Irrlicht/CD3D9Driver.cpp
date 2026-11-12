@@ -807,6 +807,7 @@ bool CD3D9Driver::setRenderTargetEx(IRenderTarget* target, u16 clearFlag, SColor
 
 				os::Printer::log("Error: Could not set render target.", ELL_ERROR);
 			}
+			
 		}
 
 		// Reset other render target channels.
@@ -832,6 +833,7 @@ bool CD3D9Driver::setRenderTargetEx(IRenderTarget* target, u16 clearFlag, SColor
 		// Set other settings.
 
 		CurrentRenderTargetSize = renderTarget->getSize();
+		ViewPort = core::recti(CurrentRenderTargetSize);
 		Transformation3DChanged = true;
 	}
 	else if (CurrentRenderTarget != target)
@@ -875,6 +877,7 @@ bool CD3D9Driver::setRenderTargetEx(IRenderTarget* target, u16 clearFlag, SColor
 		// Set other settings.
 
 		CurrentRenderTargetSize = core::dimension2d<u32>(0, 0);
+		ViewPort = core::recti(ScreenSize);
 		Transformation3DChanged = true;
 	}
 

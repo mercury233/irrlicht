@@ -75,6 +75,10 @@ namespace scene
 
 
 // byte-align structures
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#endif
 #include "irrpack.h"
 
 	//! this holds the header info of the MD3 file
@@ -135,6 +139,10 @@ namespace scene
 
 // Default alignment
 #include "irrunpack.h"
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
 	//! Holding Frame Data for a Mesh
 	struct SMD3MeshBuffer : public IReferenceCounted

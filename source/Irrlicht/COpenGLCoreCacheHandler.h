@@ -583,6 +583,7 @@ public:
 
 	// Viewport calls.
 
+	// Careful: viewportY origin is bottom not top
 	void getViewport(GLint& viewportX, GLint& viewportY, GLsizei& viewportWidth, GLsizei& viewportHeight) const
 	{
 		viewportX = ViewportX;
@@ -591,6 +592,7 @@ public:
 		viewportHeight = ViewportHeight;
 	}
 
+	// Careful: viewportY origin is bottom not top
 	void setViewport(GLint viewportX, GLint viewportY, GLsizei viewportWidth, GLsizei viewportHeight)
 	{
 		if (ViewportX != viewportX || ViewportY != viewportY || ViewportWidth != viewportWidth || ViewportHeight != viewportHeight)

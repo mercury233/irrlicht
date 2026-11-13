@@ -276,7 +276,7 @@ typedef float ipoltype;
 #define	ipol_lower_0(n)			((n) <  (ipoltype)0.0)
 #define	ipol_greater_0(n)		((n) >  (ipoltype)0.0)
 
-#if	(_MSC_VER > 1700 )
+#if	(_MSC_VER > 1700 ) && !defined(__clang__)
 #define burning_restrict __restrict
 #else
 #define burning_restrict

@@ -103,11 +103,167 @@ static bool testReplace()
 	if ( str != L"keepme" )
 		return false;
 
+	// empty string
+	str.clear();
+	str.replace("abc", "def");
+	str.replace("abc", "defeg");
+	str.replace("abc", "d");
+	if ( str != L"" )
+		return false;
+
 	return true;
 }
 
+static bool testRemove()
+{
+	core::stringw str;
+	core::stringw rm;
+	str.remove(rm);
+	if ( str != "" )
+		return false;
 
-bool testAppendStringc()
+	str = "yowheeyo";
+	str.remove(rm);
+	if ( str != "yowheeyo" )
+		return false;
+
+	rm = "yo";
+	str.remove(rm);
+	if ( str != "whee" )
+		return false;
+
+	rm = "eh";
+	str.remove(rm);
+	if ( str != "whee" )
+		return false;
+
+	rm = "abc";
+	str.remove(rm);
+	if ( str != "whee" )
+		return false;
+
+	rm = "he";
+	str.remove(rm);
+	if ( str != "we" )
+		return false;
+
+	rm = "were";
+	str.remove(rm);
+	if ( str != "we" )
+		return false;
+
+	rm = "we";
+	str.remove(rm);
+	if ( str != "" )
+		return false;
+
+	str.remove(rm);
+	if ( str != "" )
+		return false;
+
+	return true;
+}
+
+bool testAppend()
+{
+	stringc str;
+	str.append("W");
+	if (str != "W")
+		return false;
+	str.append("i");
+	if (str != "Wi")
+		return false;
+	str.append("");
+	if (str != "Wi")
+		return false;
+	str="";
+	if (str != "")
+		return false;
+
+	str.append(0, 10000);
+	if (str != "")
+		return false;
+	str.append("foo", 0);
+	if (str != "")
+		return false;
+	str.append("foo", 2);
+	if (str != "fo")
+		return false;
+	str.append("foo", 3);
+	if (str != "fofoo")
+		return false;
+	str.append("foo", 1000);
+	if (str != "fofoofoo")
+		return false;
+	str.append("xyz", 0);
+	if (str != "fofoofoo")
+		return false;
+	str.append("");
+	if (str != "fofoofoo")
+		return false;
+
+	str.clear();
+	if (str != "")
+		return false;
+
+	stringc other;
+	str.append(other);
+	if (str != "")
+		return false;
+
+	str.append(other);
+	str.append(other);
+	if (str != "")
+		return false;
+	other = "W";
+	str.append(other);
+	if (str != "W")
+		return false;
+	other = "hoopsi";
+	str.append(other);
+	if (str != "Whoopsi")
+		return false;
+	other.clear();
+	str.append(other);
+	if (str != "Whoopsi")
+		return false;
+
+	str.clear();
+
+	str.append(other, 0);
+	str.append(other, 1);
+	str.append(other, 100);
+	if (str != "")
+		return false;
+
+	other = "other";
+	str.append(other, 0);
+	if (str != "")
+		return false;
+	str.append(other, 1);
+	if (str != "o")
+		return false;
+	str.append(other, 3);
+	if (str != "ooth")
+		return false;
+	str.append(other, 33);
+	if (str != "oothother")
+		return false;
+	str.clear();
+	str.append(other, other.size());
+	if (str != "other")
+		return false;
+	str.append(other, other.size()-1);
+	if (str != "otherothe")
+		return false;
+	str.append(other, other.size()+1);
+	if (str != "otherotheother")
+		return false;
+
+	return true;
+}
+
+bool testOpPlusAssign()
 {
 	core::stringc str;
 	// Test with character
@@ -377,8 +533,13 @@ bool testIrrString(void)
 		assert_log(*(empty.c_str())==0);
 		assert_log(allExpected &= testSplit());
 	}
-	allExpected &= testAppendStringc();
+	logTestString("Test += operator\n");
+	allExpected &= testOpPlusAssign();
 
+	logTestString("Test append\n");
+	allExpected &= testAppend();
+
+	logTestString("Test insert\n");
 	allExpected &= testInsert();
 
 	logTestString("Test io::path\n");
@@ -396,6 +557,9 @@ bool testIrrString(void)
 
 	logTestString("test replace\n");
 	allExpected &= testReplace();
+
+	logTestString("test remove\n");
+	allExpected &= testRemove();
 
 	logTestString("test make_lower and make_uppers\n");
 	allExpected &= testLowerUpper();

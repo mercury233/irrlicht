@@ -116,7 +116,7 @@ bool testGeometryCreator(void)
 
 	// This screenshot shows some mipmap problems, but this seems to be
 	// no fault of the mesh
-	result &= takeScreenshotAndCompareAgainstReference(driver, "-testTerrainMesh.png", 99.83f);
+	result &= takeScreenshotAndCompareAgainstReference(driver, "-testTerrainMesh.png", 99.82f);
 
 	device->closeDevice();
 	device->run();

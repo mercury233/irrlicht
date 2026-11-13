@@ -807,6 +807,7 @@ bool CD3D9Driver::setRenderTargetEx(IRenderTarget* target, u16 clearFlag, SColor
 
 				os::Printer::log("Error: Could not set render target.", ELL_ERROR);
 			}
+			
 		}
 
 		// Reset other render target channels.
@@ -832,6 +833,7 @@ bool CD3D9Driver::setRenderTargetEx(IRenderTarget* target, u16 clearFlag, SColor
 		// Set other settings.
 
 		CurrentRenderTargetSize = renderTarget->getSize();
+		ViewPort = core::recti(CurrentRenderTargetSize);
 		Transformation3DChanged = true;
 	}
 	else if (CurrentRenderTarget != target)
@@ -875,6 +877,7 @@ bool CD3D9Driver::setRenderTargetEx(IRenderTarget* target, u16 clearFlag, SColor
 		// Set other settings.
 
 		CurrentRenderTargetSize = core::dimension2d<u32>(0, 0);
+		ViewPort = core::recti(ScreenSize);
 		Transformation3DChanged = true;
 	}
 
@@ -1414,7 +1417,7 @@ void CD3D9Driver::draw2D3DVertexPrimitiveList(const void* vertices,
 			else
 				pID3DDevice->DrawIndexedPrimitiveUP(D3DPT_TRIANGLEFAN, 0, vertexCount, primitiveCount,
 						indexList, indexType, vertices, stride);
-				break;
+			break;
 		case scene::EPT_TRIANGLES:
 			if(!vertices)
 			{
@@ -3318,41 +3321,85 @@ IImage* CD3D9Driver::createScreenShot(video::ECOLOR_FORMAT format, video::E_REND
 	if (IImage::isCompressedFormat(format) || IImage::isDepthFormat(format) || IImage::isFloatingPointFormat(format) || format >= ECF_R8)
 		return 0;
 
-	// query the screen dimensions of the current adapter
-	D3DDISPLAYMODE displayMode;
-	pID3DDevice->GetDisplayMode(0, &displayMode);
-
 	// create the image surface to store the front buffer image [always A8R8G8B8]
-	HRESULT hr;
-	LPDIRECT3DSURFACE9 lpSurface;
-	if (FAILED(hr = pID3DDevice->CreateOffscreenPlainSurface(displayMode.Width, displayMode.Height, D3DFMT_A8R8G8B8, D3DPOOL_SCRATCH, &lpSurface, 0)))
-		return 0;
+	HRESULT hr = 0;
+	LPDIRECT3DSURFACE9 lpSurface = 0;
+	RECT clientRect = {};
+	D3DFORMAT surfaceFormat = D3DFMT_UNKNOWN;
 
-	// read the front buffer into the image surface
-	if (FAILED(hr = pID3DDevice->GetFrontBufferData(0, lpSurface)))
+	// Try to use back buffer in windowed so it doesn't include window decorations (also it's faster)
+	// Using front buffer in fullscreen because it worked and back-buffer doesn't so far ... (don't know yet why - feel free to send a patch)
+	if (!Params.Fullscreen)
 	{
-		lpSurface->Release();
-		return 0;
+		// Try reading the back buffer into the image surface
+		IDirect3DSurface9* pBackBuffer = 0;
+		hr = pID3DDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
+		if (SUCCEEDED(hr))
+		{
+			D3DSURFACE_DESC desc;
+			pBackBuffer->GetDesc(&desc);
+
+			surfaceFormat = desc.Format;
+			clientRect.right = desc.Width;
+			clientRect.bottom = desc.Height;
+
+			hr = pID3DDevice->CreateOffscreenPlainSurface(desc.Width, desc.Height, desc.Format, D3DPOOL_SYSTEMMEM, &lpSurface, 0);
+			if (SUCCEEDED(hr))
+			{
+				hr = pID3DDevice->GetRenderTargetData(pBackBuffer, lpSurface);
+				if (FAILED(hr))
+				{
+					lpSurface->Release();
+					lpSurface = 0;
+				}
+			}
+
+			pBackBuffer->Release();
+			pBackBuffer = 0;
+		}
 	}
 
-	RECT clientRect;
+	if ( !lpSurface ) // back-buffer failed, try front buffer
 	{
-		POINT clientPoint;
-		clientPoint.x = 0;
-		clientPoint.y = 0;
+		// query the screen dimensions of the current adapter
+		D3DDISPLAYMODE displayMode;
+		pID3DDevice->GetDisplayMode(0, &displayMode);
 
-		ClientToScreen((HWND)getExposedVideoData().D3D9.HWnd, &clientPoint);
+		surfaceFormat = displayMode.Format;
+		 // TODO: I don't know why it hardcoded D3DFMT_A8R8G8B8 in CreateOffscreenPlainSurface, but compared to displayMode.Format below.
+		//        But not touching that as no one seems to have complained about that so far, but looks suspicous.
+		//        (it did the same before I introduced the surfaceFormat variable which I needed for backface buffers stuff) 
+		if (FAILED(hr = pID3DDevice->CreateOffscreenPlainSurface(displayMode.Width, displayMode.Height, D3DFMT_A8R8G8B8, D3DPOOL_SCRATCH, &lpSurface, 0)))
+		{
+			return 0;
+		}
 
-		clientRect.left   = clientPoint.x;
-		clientRect.top	= clientPoint.y;
-		clientRect.right  = clientRect.left + ScreenSize.Width;
-		clientRect.bottom = clientRect.top  + ScreenSize.Height;
+		// read the front buffer into the image surface
+		// Note: In windowed mode this can include stuff like round window borders from the Windows theme as this is the buffer after composition
+		if (FAILED(hr = pID3DDevice->GetFrontBufferData(0, lpSurface)))
+		{
+			lpSurface->Release();
+			return 0;
+		}
 
-		// window can be off-screen partly, we can't take screenshots from that
-		clientRect.left = core::max_(clientRect.left, 0l);
-		clientRect.top = core::max_(clientRect.top, 0l);
-		clientRect.right = core::min_(clientRect.right, (long)displayMode.Width);
-		clientRect.bottom = core::min_(clientRect.bottom, (long)displayMode.Height );
+		{
+			POINT clientPoint;
+			clientPoint.x = 0;
+			clientPoint.y = 0;
+
+			ClientToScreen((HWND)getExposedVideoData().D3D9.HWnd, &clientPoint);
+
+			clientRect.left   = clientPoint.x;
+			clientRect.top	= clientPoint.y;
+			clientRect.right  = clientRect.left + ScreenSize.Width;
+			clientRect.bottom = clientRect.top  + ScreenSize.Height;
+
+			// window can be off-screen partly, we can't take screenshots from that
+			clientRect.left = core::max_(clientRect.left, 0l);
+			clientRect.top = core::max_(clientRect.top, 0l);
+			clientRect.right = core::min_(clientRect.right, (long)displayMode.Width);
+			clientRect.bottom = core::min_(clientRect.bottom, (long)displayMode.Height );
+		}
 	}
 
 	// lock our area of the surface
@@ -3379,7 +3426,7 @@ IImage* CD3D9Driver::createScreenShot(video::ECOLOR_FORMAT format, video::E_REND
 		// If the display mode format doesn't promise anything about the Alpha value
 		// and it appears that it's not presenting 255, then we should manually
 		// set each pixel alpha value to 255.
-		if (D3DFMT_X8R8G8B8 == displayMode.Format && (0xFF000000 != (*dP & 0xFF000000)))
+		if (D3DFMT_X8R8G8B8 == surfaceFormat && (0xFF000000 != (*dP & 0xFF000000)))
 		{
 			for (u32 y = 0; y < shotSize.Height; ++y)
 			{

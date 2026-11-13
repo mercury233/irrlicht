@@ -1,5 +1,16 @@
 --------------------------
 Changes in 1.9 (not yet released)
+- Fix getViewPort not returning changed viewport values after setting render targets in D3D9 and OpenGL
+- Fix fuzzyCompareImages used in tests ignoring the lower 25% part of the images.
+- CD3D9Driver::createScreenShot now using back buffer instead of front buffer in windowed mode to avoid window decoration in screenshots.
+- obj format reader/writer now pass through the group names for mesh buffers when available (otherwise writer has old behaviour)
+- Add setName/getName interface to IMeshBuffer
+- Add getNameStr functions to IGUIElement and ISceneNode to allow getting name without a conversion to c-string
+- strings have now small string optimization. Empty and short strings no longer allocate heap memory.
+  The cost is 16 exta bytes per string object.
+  Note: breaks binary compatibility for dll's (again).
+- string::reserve from now on expects size without null terminator, so it will allocate memory for 1 more character
+- Add function string::capacity
 - Escape key in ComboBox now working (not sure since when it was broken... 1.8 already didn't, but probably some earlier version was OK)
 - Fix: CMeshManipulator::getPolyCount no longer assumes every mesh is made of triangles
 - Listbox now ensures HoverSelected is applied on lmouse-up and reset when losing focus.
@@ -493,6 +504,8 @@ Changes in 1.9 (not yet released)
 
 --------------------------
 Changes in 1.8.6
+- Harden 3ds loader. It wasn't written with safety in mind, only use with files you trust.
+- Harden npk, pak, wad and tar archive readers.
 - Harden zip reader. Thanks @Lars Müller for reporting some of the problems. 
   There are likely many more security problems in it as this wasn't written with safety in mind.
   So only use with .zip files you trust.

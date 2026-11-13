@@ -3249,9 +3249,10 @@ void COpenGLDriver::setViewPort(const core::rect<s32>& area, bool clipToRenderTa
 	}
 
 	if (vp.getHeight() > 0 && vp.getWidth() > 0)
+	{
 		CacheHandler->setViewport(vp.UpperLeftCorner.X, getCurrentRenderTargetSize().Height - vp.UpperLeftCorner.Y - vp.getHeight(), vp.getWidth(), vp.getHeight());
-
-	ViewPort = vp;
+		ViewPort = vp;
+ 	}
 }
 
 
@@ -3654,7 +3655,7 @@ void COpenGLDriver::OnResize(const core::dimension2d<u32>& size)
 	}
 
 	CNullDriver::OnResize(size);
-	CacheHandler->setViewport(0, 0, size.Width, size.Height);
+	CacheHandler->setViewport(ViewPort.UpperLeftCorner.X, getCurrentRenderTargetSize().Height - ViewPort.UpperLeftCorner.Y - ViewPort.getHeight(), ViewPort.getWidth(), ViewPort.getHeight());
 	Transformation3DChanged = true;
 }
 
@@ -3906,6 +3907,7 @@ bool COpenGLDriver::setRenderTargetEx(IRenderTarget* target, u16 clearFlag, SCol
 
 		destRenderTargetSize = renderTarget->getSize();
 
+		ViewPort = core::recti(destRenderTargetSize);
 		CacheHandler->setViewport(0, 0, destRenderTargetSize.Width, destRenderTargetSize.Height);
 	}
 	else
@@ -3932,6 +3934,7 @@ bool COpenGLDriver::setRenderTargetEx(IRenderTarget* target, u16 clearFlag, SCol
 
 		destRenderTargetSize = core::dimension2d<u32>(0, 0);
 
+		ViewPort = core::recti(ScreenSize);
 		CacheHandler->setViewport(0, 0, ScreenSize.Width, ScreenSize.Height);
 	}
 

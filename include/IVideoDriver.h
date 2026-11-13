@@ -538,14 +538,15 @@ namespace video
 		virtual void makeNormalMapTexture(video::ITexture* texture, f32 amplitude=1.0f) const =0;
 
 		//! Set a render target.
-		/** This will only work if the driver supports the
-		EVDF_RENDER_TO_TARGET feature, which can be queried with
-		queryFeature(). Please note that you cannot render 3D or 2D
-		geometry with a render target as texture on it when you are rendering
-		the scene into this render target at the same time. It is usually only
-		possible to render into a texture between the
-		IVideoDriver::beginScene() and endScene() method calls. If you need the
-		best performance use this method instead of setRenderTarget.
+		/** This will only work if the driver supports the EVDF_RENDER_TO_TARGET 
+		feature, which can be queried with queryFeature(). 
+		Note: This will set the viewport to the full size of the render target.
+		You can change the viewport again after it's set.
+		Note: You cannot render 3D or 2D geometry with a render target as 
+		texture on it when you are rendering the scene into this render target
+		at the same time. It is usually only possible to render into a texture 
+		between the	IVideoDriver::beginScene() and endScene() method calls. 
+		Note: Prefer this method over setRenderTarget for better performance.
 		\param target Render target object.
 		\param clearFlag A combination of the E_CLEAR_BUFFER_FLAG bit-flags.
 		\param clearColor The clear color for the color buffer.
@@ -558,8 +559,10 @@ namespace video
 		//! Sets a new render target.
 		/** This will only work if the driver supports the
 		EVDF_RENDER_TO_TARGET feature, which can be queried with
-		queryFeature(). Usually, rendering to textures is done in this
-		way:
+		queryFeature(). 
+		Note: This will set the viewport to the full size of the render target.
+		You can change the viewport again after it's set.
+		Usually, rendering to textures is done in this way:
 		\code
 		// create render target
 		ITexture* target = driver->addRenderTargetTexture(core::dimension2d<u32>(128,128), "rtt1");
@@ -604,6 +607,8 @@ namespace video
 
 		//! Sets a new viewport.
 		/** Every rendering operation is done into this new area.
+		Note: Setting rendertargets will also change the viewport.
+		Note: Resizing the window may change the viewport
 		\param area: Rectangle defining the new area of rendering
 		operations. 
 		\param clipToRenderTarget When true the function ensures the area won't

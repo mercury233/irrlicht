@@ -12,10 +12,7 @@
 
 #include "CIrrDeviceWin32.h"
 #include "IEventReceiver.h"
-#include "irrList.h"
 #include "os.h"
-
-#include "CTimer.h"
 #include "irrString.h"
 #include "COSOperator.h"
 #include "dimension2d.h"
@@ -357,23 +354,23 @@ void SJoystickWin32Control::pollJoysticks()
 			case 6:
 				event.JoystickEvent.Axis[SEvent::SJoystickEvent::AXIS_V] =
 					(s16)((65535 * (info.dwVpos - caps.wVmin)) / (caps.wVmax - caps.wVmin) - 32768);
-
+                /* fallthrough */
 			case 5:
 				event.JoystickEvent.Axis[SEvent::SJoystickEvent::AXIS_U] =
 					(s16)((65535 * (info.dwUpos - caps.wUmin)) / (caps.wUmax - caps.wUmin) - 32768);
-
+                /* fallthrough */
 			case 4:
 				event.JoystickEvent.Axis[SEvent::SJoystickEvent::AXIS_R] =
 					(s16)((65535 * (info.dwRpos - caps.wRmin)) / (caps.wRmax - caps.wRmin) - 32768);
-
+                /* fallthrough */
 			case 3:
 				event.JoystickEvent.Axis[SEvent::SJoystickEvent::AXIS_Z] =
 					(s16)((65535 * (info.dwZpos - caps.wZmin)) / (caps.wZmax - caps.wZmin) - 32768);
-
+                /* fallthrough */
 			case 2:
 				event.JoystickEvent.Axis[SEvent::SJoystickEvent::AXIS_Y] =
 					(s16)((65535 * (info.dwYpos - caps.wYmin)) / (caps.wYmax - caps.wYmin) - 32768);
-
+                /* fallthrough */
 			case 1:
 				event.JoystickEvent.Axis[SEvent::SJoystickEvent::AXIS_X] =
 					(s16)((65535 * (info.dwXpos - caps.wXmin)) / (caps.wXmax - caps.wXmin) - 32768);
@@ -429,17 +426,19 @@ irr::core::stringc SJoystickWin32Control::findJoystickName(int index, const JOYC
                                  NULL, &regsize);
     if (regresult == ERROR_SUCCESS)
     {
-        char *name;
         /* allocate enough memory for the OEM name text ... */
-        name = new char[regsize];
+        char *name = new char[regsize];
         if (name)
         {
             /* ... and read it from the registry */
             regresult = RegQueryValueEx(hKey, REGSTR_VAL_JOYOEMNAME, 0, 0,
                                          (LPBYTE)name, &regsize );
-            result = name;
+			if (regresult == ERROR_SUCCESS)
+			{
+				result = name;
+			}
+			delete[] name;
         }
-        delete[] name;
     }
     RegCloseKey(hKey);
 
